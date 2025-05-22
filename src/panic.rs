@@ -1,6 +1,6 @@
 use core::panic::PanicInfo;
 
-use xelf::{exit, info};
+use crate::{info, syscall};
 
 #[panic_handler]
 pub fn panic(_info: &PanicInfo) -> ! {
@@ -10,7 +10,7 @@ pub fn panic(_info: &PanicInfo) -> ! {
         info!(".");
         if count == 0 {
             info!("\n");
-            exit();
+            syscall::exit(23);
         }
     }
 }

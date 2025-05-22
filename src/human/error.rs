@@ -3,7 +3,7 @@ use crate::ErrorTrait;
 #[repr(isize)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum Error {
-    FormatError,
+    Format(core::fmt::Result),
     Numbered(isize),
     TODO = 245,
 }
