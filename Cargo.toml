@@ -1,0 +1,32 @@
+[package]
+name = "template"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+print = { path = "crates/print" }
+
+[workspace]
+members = ["crates/print"]
+
+[lib]
+name = "template"
+path = "src/lib.rs"
+test = false
+
+[[bin]]
+name = "template"
+path = "src/main.rs"
+test = false
+
+[profile.release]
+# lto = true   # Disabled - we're avoiding LTO
+codegen-units = 1
+opt-level = "s"
+# panic = "abort"
+debug = false
+incremental = false
+overflow-checks = false
+
+[build-dependencies]
+cc = "1.0"
