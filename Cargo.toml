@@ -5,9 +5,10 @@ edition = "2024"
 
 [dependencies]
 x86_64 = { path = "crates/x86_64" }
+human = { path = "crates/human" }
 
 [workspace]
-members = ["crates/x86_64"]
+members = ["crates/human", "crates/syscall", "crates/x86_64"]
 
 [lib]
 name = "xelf"

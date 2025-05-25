@@ -1,13 +1,9 @@
 #![no_std]
 
+mod result;
 mod syscall;
 
-pub use syscall::syscall0;
-pub use syscall::syscall1;
-pub use syscall::syscall2;
-pub use syscall::syscall3;
-pub use syscall::syscall4;
-pub use syscall::syscall5;
-pub use syscall::syscall6;
+pub use result::*;
+pub use syscall::*;
 
-// mod stack;
+pub use human::info;

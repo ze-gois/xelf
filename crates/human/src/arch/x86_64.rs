@@ -1,9 +1,6 @@
-use crate::info;
-
 #[inline(always)]
 pub fn syscall3(n: usize, a1: usize, a2: usize, a3: usize) -> usize {
     let ret: usize;
-    info!("crate: syscall3: \"");
     unsafe {
         core::arch::asm!(
             "syscall",
@@ -16,6 +13,5 @@ pub fn syscall3(n: usize, a1: usize, a2: usize, a3: usize) -> usize {
             lateout("rax") ret,
         );
     }
-    info!("\" .. done\n");
     ret
 }
