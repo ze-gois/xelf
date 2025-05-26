@@ -5,6 +5,18 @@ pub mod flags;
 
 static NUMBER: usize = Number::OpenAt as usize;
 
+define_syscall_error!(Error, Open, "openat", [
+    [FileNotFound, -2, "File not found", ENOENT],
+    [PermissionDenied, -13, "Permission denied", EACCES],
+    [InvalidPath, -22, "Invalid path", EINVAL],
+    [DirectoryNotFound, -20, "Directory not found", ENOTDIR],
+    [TooManySymlinks, -40, "Too many levels of symbolic links", ELOOP],
+    [PathnameTooLong, -36, "Pathname too long", ENAMETOOLONG],
+    [FileExists, -17, "File exists", EEXIST],
+    [TooManyOpenFiles, -24, "Too many open files", EMFILE],
+    [NoSpace, -28, "No space left on device", ENOSPC]
+]);
+
 pub fn openat(
     directory_file_descriptor: i32,
     file_pathname: *const u8,
@@ -34,49 +46,6 @@ pub fn openat4(
         mode as usize,
     );
     handle_result(syscall_result)
-}
-
-use result::ErrorTrait;
-
-#[repr(isize)]
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum Error {
-    TODO,
-}
-
-impl ErrorTrait for Error {
-    fn from_no(errno: isize) -> Self {
-        match -errno {
-            _ => Self::TODO,
-        }
-    }
-
-    fn describe(&self) -> &str {
-        match self {
-            _ => "TODO",
-        }
-    }
-
-    fn advert(&self) -> Option<isize> {
-        None
-    }
-}
-
-impl Into<isize> for Error {
-    fn into(self) -> isize {
-        match self {
-            _ => unsafe { *(&self as *const Self as *const isize) },
-        }
-    }
-}
-
-fn handle_result(result: arch::result::Result<isize>) -> crate::result::Result<isize> {
-    match result {
-        Ok(signed_result) => Ok(signed_result),
-        Err(err) => Err(crate::result::Error::Open(match err {
-            _ => Error::TODO,
-        })),
-    }
 }
 
 // pub type Result<T> = core::result::Result<T, Error>;

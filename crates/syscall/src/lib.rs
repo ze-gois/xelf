@@ -2,6 +2,9 @@
 pub mod result;
 pub use result::*;
 
+#[macro_use]
+pub mod macros;
+
 pub mod exit;
 pub mod open;
 pub mod read;

@@ -22,12 +22,20 @@ impl ErrorTrait for Error {
 
     fn describe(&self) -> &str {
         match self {
-            _ => "TODO",
+            Error::Open(err) => err.describe(),
+            Error::Read(err) => err.describe(),
+            Error::Write(err) => err.describe(),
+            Error::TODO => "TODO",
         }
     }
 
     fn advert(&self) -> Option<isize> {
-        None
+        match self {
+            Error::Open(err) => err.advert(),
+            Error::Read(err) => err.advert(),
+            Error::Write(err) => err.advert(),
+            Error::TODO => None,
+        }
     }
 }
 
