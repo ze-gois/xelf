@@ -1,8 +1,6 @@
 #![no_std]
-pub mod arch;
-pub mod error;
-pub mod human;
 pub mod panic;
-pub mod syscall;
+pub mod result;
 
-pub use error::*;
+pub use human::info;
+pub use result::*;

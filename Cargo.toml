@@ -4,11 +4,18 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-x86_64 = { path = "crates/x86_64" }
 human = { path = "crates/human" }
+syscall = { path = "crates/syscall" }
+result = { path = "crates/result" }
 
 [workspace]
-members = ["crates/human", "crates/syscall", "crates/x86_64"]
+members = [
+    "crates/arch",
+    "crates/human",
+    "crates/result",
+    "crates/syscall",
+    "crates/x86_64",
+]
 
 [lib]
 name = "xelf"

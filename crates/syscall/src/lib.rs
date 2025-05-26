@@ -1,14 +1,44 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
+#![no_std]
+pub mod result;
+pub use result::*;
+
+pub mod exit;
+pub mod open;
+pub mod read;
+pub mod write;
+
+pub use exit::exit;
+pub use open::{openat, openat4};
+pub use read::read;
+pub use write::write;
+
+pub enum Number {
+    Exit = 60,
+    Write = 1,
+    OpenAt = 257,
+    Read = 0,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+impl Number {
+    pub fn from(n: usize) -> Option<Number> {
+        match n {
+            60 => Some(Number::Exit),
+            1 => Some(Number::Write),
+            257 => Some(Number::OpenAt),
+            _ => None,
+        }
+    }
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
+    // pub fn tupled_function(n: usize) -> Option<fn((usize,)) -> usize> {
+    //     match n {
+    //         1 => Some(tupled_write),
+    //         _ => None,
+    //     }
+    // }
+}
+
+impl Into<usize> for Number {
+    fn into(self) -> usize {
+        self as usize
     }
 }

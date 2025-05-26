@@ -1,8 +1,9 @@
 [package]
-name = "x86_64"
+name = "arch"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
 human = { path = "../human" }
+x86_64 = { path = "../x86_64" }
 result = { path = "../result" }

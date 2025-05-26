@@ -1,8 +1,15 @@
 use result::ErrorTrait;
 
+use crate::open::Error as OpenError;
+use crate::read::Error as ReadError;
+use crate::write::Error as WriteError;
+
 #[repr(isize)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum Error {
+    Open(OpenError),
+    Read(ReadError),
+    Write(WriteError),
     TODO,
 }
 
@@ -29,16 +36,6 @@ impl Into<isize> for Error {
         match self {
             _ => unsafe { *(&self as *const Self as *const isize) },
         }
-    }
-}
-
-pub fn handle_result(result: usize) -> Result<isize> {
-    let signed_result = result as isize;
-
-    if signed_result < 0 {
-        Err(Error::from_no(-signed_result))
-    } else {
-        Ok(signed_result)
     }
 }
 

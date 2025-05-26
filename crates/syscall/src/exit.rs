@@ -1,5 +1,5 @@
 use super::Number;
-use crate::arch::{Arch, Callable};
+use arch::{Arch, Callable};
 
 pub fn exit(status_code: i32) -> ! {
     let number = Number::Exit as usize;

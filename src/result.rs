@@ -1,15 +1,18 @@
-use result::ErrorTrait;
+use human::result::Error as HumanError;
+use syscall::result::Error as SyscallError;
 
 #[repr(isize)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum Error {
+    Syscall(SyscallError),
+    Human(HumanError),
     TODO,
 }
 
-impl ErrorTrait for Error {
-    fn from_no(errno: isize) -> Self {
+impl result::ErrorTrait for Error {
+    fn from_no(errno: isize) -> Error {
         match -errno {
-            _ => Self::TODO,
+            _ => Error::TODO,
         }
     }
 
@@ -20,25 +23,19 @@ impl ErrorTrait for Error {
     }
 
     fn advert(&self) -> Option<isize> {
-        None
+        match self {
+            _ => None,
+        }
     }
 }
 
 impl Into<isize> for Error {
     fn into(self) -> isize {
         match self {
-            _ => unsafe { *(&self as *const Self as *const isize) },
+            Error::Human(_e) => -4,
+            Error::Syscall(_e) => -2,
+            Error::TODO => -1,
         }
-    }
-}
-
-pub fn handle_result(result: usize) -> Result<isize> {
-    let signed_result = result as isize;
-
-    if signed_result < 0 {
-        Err(Error::from_no(-signed_result))
-    } else {
-        Ok(signed_result)
     }
 }
 

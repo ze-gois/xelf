@@ -1,14 +1,15 @@
+use crate::result::{Result, handle_result};
+
 #[inline(always)]
-pub fn syscall0(n: usize) -> usize {
-    let ret: usize;
+pub fn syscall0(n: usize) -> Result<isize> {
+    let syscall_return: usize;
     unsafe {
         core::arch::asm!(
             "syscall",
-            in("rax") n,
+            inlateout("rax") n => syscall_return,
             out("rcx") _,
             out("r11") _,
-            lateout("rax") ret,
         );
     }
-    ret
+    handle_result(syscall_return)
 }

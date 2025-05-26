@@ -1,0 +1,18 @@
+[package]
+name = "result"
+version = "0.1.0"
+edition = "2024"
+description = "Error and result handling traits for the xelf system"
+authors = ["Xelf Team"]
+
+[dependencies]
+# No external dependencies required
+
+[[example]]
+name = "binary_usage"
+path = "examples/binary_usage.rs"
+required-features = []
+
+[features]
+default = []
+# Add features as needed
