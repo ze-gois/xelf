@@ -1,0 +1,41 @@
+/*
+        let elf_file = Self::read_from_filepath(filepath);
+        let program_lower_virtual_address = elf_file.load_programs();
+        let elf_program_entry_address = elf_file.header.entry
+            + if elf_file.is_dynamic() {
+                program_lower_virtual_address as u64 + arch::memory::DYNAMIC_OFFSET
+            } else {
+                println!("NONDYN");
+                0
+            };
+
+        println!("Original entry point: 0x{:x}", elf_file.header.entry);
+        println!(
+            "Program base address: 0x{:x}",
+            program_lower_virtual_address as u64
+        );
+        println!("Final entry address: 0x{:x}", elf_program_entry_address);
+
+        /*
+        // Also print segment info
+        if let Some(pht) = &elf_file.program_header_table {
+            for (i, segment) in pht.entries.iter().enumerate() {
+                if segment.is_loadable() {
+                    println!("Segment {} loaded at: 0x{:x}", i, segment.header.vaddr);
+                }
+            }
+        }
+
+        let elf_program_entry_pointer = elf_program_entry_address as *mut core::ffi::c_void;
+
+        unsafe {
+            type EntryFn = extern "C" fn() -> !;
+
+            let program_entry: EntryFn = core::mem::transmute(elf_program_entry_pointer);
+            program_entry();
+        };
+        // elf_file.load_interpreters();
+        // unsafe {
+        //     core::arch::asm!("");
+        // };
+        */

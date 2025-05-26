@@ -1,0 +1,17 @@
+pub enum Elf32Machine {
+    EM_NONE = 0,
+    EM_M32 = 1,
+    EM_SPARC = 2,
+    EM_386 = 3,
+    EM_68K = 4,
+    EM_88K = 5,
+    EM_860 = 7,
+    EM_MIPS = 8,
+    EM_MIPS_RS4_BE = 10,
+    RESERVED_1 = 11,
+    RESERVED_2 = 12,
+    RESERVED_3 = 13,
+    RESERVED_4 = 14,
+    RESERVED_5 = 15,
+    RESERVED_6 = 16,
+}

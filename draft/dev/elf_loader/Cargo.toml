@@ -1,0 +1,10 @@
+[package]
+name = "elf_loader"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+lib = { path = "./lib" }
+
+[target.'cfg(target_os = "linux")']
+rustflags = ["-C", "link-arg=-nostartfiles"]
