@@ -3,19 +3,19 @@ use result::ErrorTrait;
 #[repr(isize)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum Error {
-    TODO,
+    TODO(isize) = 0,
 }
 
 impl ErrorTrait for Error {
     fn from_no(errno: isize) -> Self {
         match -errno {
-            _ => Self::TODO,
+            _ => Self::TODO(errno),
         }
     }
 
     fn describe(&self) -> &str {
         match self {
-            _ => "TODO",
+            _ => "x86_64 TODO",
         }
     }
 
@@ -27,7 +27,8 @@ impl ErrorTrait for Error {
 impl Into<isize> for Error {
     fn into(self) -> isize {
         match self {
-            _ => unsafe { *(&self as *const Self as *const isize) },
+            Error::TODO(errno) => errno,
+            // _ => unsafe { *(&self as *const Self as *const isize) },
         }
     }
 }

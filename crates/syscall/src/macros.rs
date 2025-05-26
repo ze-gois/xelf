@@ -62,7 +62,7 @@ macro_rules! define_syscall_error {
             }
 
             fn advert(&self) -> Option<isize> {
-                human::info!("Error on {} syscall: {} {:?}", SYSCALL_NAME, self.describe(), self);
+                human::info!("SYSCALL ERROR: {} - {} [{:?}]", SYSCALL_NAME, self.describe(), self);
                 None
             }
         }
@@ -77,18 +77,20 @@ macro_rules! define_syscall_error {
             match result {
                 Ok(signed_result) => Ok(signed_result),
                 Err(err) => {
-                    // Convert the error value to an isize for mapping
-                    let errno = err as isize;
+                    let errno : isize = err.into();
 
-                    // Get the absolute value of the errno (Linux uses negative values)
-                    let abs_errno = if errno < 0 { -errno } else { errno };
+                    human::info!("\nRaw syscall error: {} = {}\n",
+                              SYSCALL_NAME, errno);
 
-                    Err(crate::result::Error::$result_variant(
-                        match abs_errno {
-                            $($errno => $error_enum_name::$error_variant,)*
-                            _ => $error_enum_name::TODO
-                        }
-                    ))
+                    // let abs_errno = if errno < 0 { -errno } else { errno };
+
+                    // Create appropriate error based on the error code
+                    let matched_error = match errno {
+                        $($errno => $error_enum_name::$error_variant,)*
+                        _ => $error_enum_name::TODO
+                    };
+
+                    Err(crate::result::Error::$result_variant(matched_error))
                 }
             }
         }
