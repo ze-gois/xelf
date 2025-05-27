@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+arch = { path = "crates/arch" }
 human = { path = "crates/human" }
 syscall = { path = "crates/syscall" }
 result = { path = "crates/result" }

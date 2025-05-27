@@ -1,5 +1,5 @@
 pub mod callable;
-pub mod stackable;
+pub mod stacking;
 
 pub use callable::*;
-pub use stackable::*;
+pub use stacking::*;

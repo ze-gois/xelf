@@ -1,6 +1,7 @@
 #![no_std]
 #![allow(unused)]
 pub mod macros;
+pub mod memory;
 pub mod traits;
 
 #[cfg(target_arch = "x86_64")]
