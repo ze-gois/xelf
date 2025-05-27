@@ -1,7 +1,8 @@
-mod atype;
-mod auxv;
+pub mod atype;
+pub mod auxv;
 
-use auxv::AuxEntry;
+pub use atype::*;
+pub use auxv::*;
 
 use human::info;
 
@@ -19,25 +20,33 @@ pub struct Layout {
 
 impl Layout {
     pub fn from_pointer(stack_pointer: *mut u64) -> Self {
-        let argc = stack_pointer;
+        let argc = unsafe { *stack_pointer };
         let argv = unsafe { (stack_pointer.add(1)) as *mut *mut u8 };
-        let envp = unsafe { argv.add(*argc as usize + 1) };
+        let envp = unsafe { argv.add(argc as usize + 1) };
 
         let mut envp_pointer = envp;
-        while !unsafe { (*envp_pointer).is_null() } {
+        while unsafe { !(*envp_pointer).is_null() } {
             envp_pointer = unsafe { envp_pointer.add(1) };
         }
 
         let auxv = unsafe { envp_pointer.add(1) as *mut AuxEntry };
+        
+        // Count auxiliary vector entries
+        let mut auxc = 0;
+        let mut auxv_ptr = auxv;
+        while unsafe { !auxv_ptr.is_null() && ((*auxv_ptr).atype != 0 || (*auxv_ptr).value != 0) } {
+            auxc += 1;
+            auxv_ptr = unsafe { auxv_ptr.add(1) };
+        }
 
         Self {
             pointer: stack_pointer,
-            argc: unsafe { *argc } as usize,
+            argc: argc as usize,
             argv: argv,
             envp: envp,
-            envc: envp_pointer as usize - envp as usize,
+            envc: unsafe { envp_pointer.offset_from(envp) as usize },
             auxv: auxv,
-            auxc: auxv as usize - envp_pointer as usize,
+            auxc: auxc,
             saved_pointer: stack_pointer,
         }
     }
@@ -54,7 +63,14 @@ impl Layout {
             info!("\n\tArgument #{i}: \"");
             let arg = unsafe { core::ptr::read(self.argv.offset(i as isize)) };
             let len = unsafe { super::misc::length(arg) };
-            info!("{}\"", unsafe { *arg });
+            
+            // Print the entire string
+            let s = unsafe { core::slice::from_raw_parts(arg, len) };
+            if let Ok(arg_str) = core::str::from_utf8(s) {
+                info!("{}\"", arg_str);
+            } else {
+                info!("<invalid UTF-8>\"");
+            }
         }
         info!("\n}} Arguments \n");
     }
@@ -64,15 +80,24 @@ impl Layout {
         let mut envp_pointer = self.envp;
         let mut envc = 0;
         while !envp_pointer.is_null() {
-            envc += 1;
-            info!("\n\tEnv: '");
-            if !(unsafe { *envp_pointer }).is_null() {
-                info!("{:?}", unsafe { *envp_pointer });
-            } else {
-                info!("NULL'");
+            if (unsafe { *envp_pointer }).is_null() {
                 break;
             }
+            
+            envc += 1;
+            info!("\n\tEnv: '");
+            let env_ptr = unsafe { *envp_pointer };
+            let len = unsafe { super::misc::length(env_ptr) };
+            
+            // Print the actual environment variable string
+            let s = unsafe { core::slice::from_raw_parts(env_ptr, len) };
+            if let Ok(env_str) = core::str::from_utf8(s) {
+                info!("{}", env_str);
+            } else {
+                info!("<invalid UTF-8>");
+            }
             info!("'");
+            
             envp_pointer = unsafe { envp_pointer.add(1) };
         }
         info!("\n}} Environment \n");
@@ -82,18 +107,45 @@ impl Layout {
         info!("Auxiliary Vector {{");
         let mut auxv_pointer = self.auxv;
         let mut auxv_count = 0;
+        
         while !auxv_pointer.is_null() {
-            auxv_count += 1;
-            info!("\n\tAux: '");
-            if !(unsafe { *auxv_pointer }).is_null() {
-                info!("{:?}", unsafe { *auxv_pointer });
-            } else {
-                info!("NULL'");
+            let auxv_entry = unsafe { *auxv_pointer };
+            
+            if auxv_entry.atype == 0 && auxv_entry.value == 0 {
+                // Found AT_NULL which marks the end of auxv
                 break;
             }
+            
+            auxv_count += 1;
+            info!("\n\tAux: ");
+            
+            // Get type as string
+            let atype_str = atype::Type::from(auxv_entry.atype).as_str();
+            info!("{} ({})", atype_str, auxv_entry.atype);
+            
+            // Print value based on type
+            info!(" = '");
+            if auxv_entry.atype == 15 || auxv_entry.atype == 31 { // AT_PLATFORM or AT_EXECFN
+                let ptr = auxv_entry.value as *const u8;
+                if !ptr.is_null() {
+                    let len = unsafe { super::misc::length(ptr) };
+                    let s = unsafe { core::slice::from_raw_parts(ptr, len) };
+                    if let Ok(str_value) = core::str::from_utf8(s) {
+                        info!("{}", str_value);
+                    } else {
+                        info!("<invalid UTF-8>");
+                    }
+                } else {
+                    info!("NULL");
+                }
+            } else {
+                info!("{:#x}", auxv_entry.value);
+            }
             info!("'");
+            
             auxv_pointer = unsafe { auxv_pointer.add(1) };
         }
+        
         info!("\n}} Auxiliary Vector \n");
     }
 
@@ -103,52 +155,3 @@ impl Layout {
         self.print_auxv();
     }
 }
-// crate::print::print_str("envp at: ");
-// crate::print::print_hex(self.envp as u64);
-// crate::print::print_str("\n");
-// let mut envp_pointer = self.envp;
-// let mut envc = 0;
-// while !envp_pointer.is_null() {
-//     envc += 1;
-//     crate::print::print_str("\tEnv: '");
-//     if !(*envp_pointer).is_null() {
-//         crate::print::print(*envp_pointer);
-//     } else {
-//         crate::print::print_str("NULL'\n");
-//         break;
-//     }
-//     crate::print::print_str("'\n");
-//     envp_pointer = envp_pointer.add(1);
-// }
-// crate::print_str("\n=======\nEnvpCount=");
-// crate::print_dec(envc as u64);
-// crate::print_str(";\n=======\n");
-
-// AuxVec::new(self.auxv).print();
-
-// crate::print::print_str("auxv at: ");
-// crate::print::print_hex(self.auxv as u64);
-// crate::print::print_str("\n");
-// let mut av = 0;
-// while !self.auxv.offset(av).is_null() && (*self.auxv.offset(av)).atype != 0 {
-//     let auxv_entry = *self.auxv.offset(av);
-//     crate::print::print_str("\tAuxv: ");
-//     crate::print::print_str(auxv::Type::from(auxv_entry.atype).as_str());
-//     crate::print::print_str(" (");
-//     crate::print::print_dec(auxv_entry.atype as u64);
-//     crate::print::print_str(")");
-//     crate::print::print_str(" = '");
-//     if !(auxv_entry.value as *const u8).is_null() {
-//         match auxv_entry.atype {
-//             31 => crate::print(auxv_entry.value as *mut u8),
-//             _ => crate::print::print_dec(auxv_entry.value as u64),
-//         }
-//     } else {
-//         crate::print::print_str("NULL");
-//     }
-//     crate::print::print_str("'\n");
-//     av += 1;
-// }
-// crate::print_str("\n=======\nAuxvCount=");
-// crate::print_dec(av as u64);
-// crate::print_str(";\n=======\n");
