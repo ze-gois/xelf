@@ -1,4 +1,8 @@
-pub use super::atype::Type;
+pub mod atype;
+pub mod entry;
+
+pub use atype::Type;
+pub use entry::*;
 
 use human::info;
 
@@ -6,25 +10,22 @@ use core::arch::x86_64;
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
-pub struct AuxEntry {
-    pub atype: usize,
-    pub value: usize,
+pub struct Vector {
+    pub count: Option<usize>,
+    entries: *mut Entry,
 }
 
-impl AuxEntry {
-    pub fn is_null(&self) -> bool {
-        self.atype == 0
+impl Default for Vector {
+    fn default() -> Self {
+        Self {
+            count: None,
+            entries: 0x0 as *mut Entry,
+        }
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-pub struct AuxVec {
-    pub entries: *mut AuxEntry,
-    pub count: Option<usize>,
-}
-
-impl AuxVec {
-    pub fn new(entries: *mut AuxEntry) -> Self {
+impl Vector {
+    pub fn new(entries: *mut Entry) -> Self {
         Self {
             entries,
             count: None,
@@ -52,14 +53,14 @@ impl AuxVec {
         count
     }
 
-    pub fn get_by_index(&mut self, index: usize) -> Option<*mut AuxEntry> {
+    pub fn get_by_index(&mut self, index: usize) -> Option<*mut Entry> {
         if index < self.count() {
             return Some(unsafe { self.entries.offset(index as isize) });
         }
         None
     }
 
-    pub fn get_by_type_id(&mut self, atype: usize) -> Option<*mut AuxEntry> {
+    pub fn get_by_type_id(&mut self, atype: usize) -> Option<*mut Entry> {
         for av in 0..self.count() {
             let entry = unsafe { self.entries.offset(av as isize) };
 
@@ -70,7 +71,7 @@ impl AuxVec {
         None
     }
 
-    pub fn get_by_type(&mut self, atype: Type) -> Option<*mut AuxEntry> {
+    pub fn get_by_type(&mut self, atype: Type) -> Option<*mut Entry> {
         self.get_by_type_id(atype.to())
     }
 

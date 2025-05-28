@@ -1,1 +1,3 @@
-pub trait Stacking {}
+pub trait Stacking {
+    type _Pointer;
+}
