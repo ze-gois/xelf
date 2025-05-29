@@ -32,9 +32,8 @@ impl<'e> Vector<'e> {
         let argv_p = argv_p as *mut *mut u8;
 
         info!("Argument count: {:?}\n\n", counter);
-
         if counter == 0 {
-            return (Some(Self::default()), crate::Pointer(argv_pointer));
+            return (None, crate::Pointer(argv_pointer));
         }
 
         // Allocate memory using mmap
@@ -42,8 +41,7 @@ impl<'e> Vector<'e> {
             let size = core::mem::size_of::<Entry<'e>>() * counter as usize;
 
             // Align size to page boundary
-            let page_size = 4096;
-            let aligned_size = (size + page_size - 1) & !(page_size - 1);
+            let aligned_size = (size + memory::page::SIZE - 1) & !(memory::page::SIZE - 1);
 
             let result = memory::mmap::mmap(
                 ptr::null_mut(),
@@ -157,8 +155,8 @@ impl<'e> Drop for Vector<'e> {
                 let size = core::mem::size_of::<Entry<'e>>() * self.counter as usize;
 
                 // Align size to page boundary
-                let page_size = 4096;
-                let aligned_size = (size + page_size - 1) & !(page_size - 1);
+                let aligned_size = (size + memory::page::SIZE - 1) & !(memory::page::SIZE - 1);
+                // let aligned_size = memory::page::align_to_lower_page(size);
 
                 let _ = memory::mmap::munmap(self.entries as *mut u8, aligned_size);
             }

@@ -2,8 +2,8 @@ use core::ops::Not;
 
 // pub use super::dtype;
 
-mod dtype {
-    pub type Addr = u64;
+pub mod dtype {
+    pub type Addr = usize;
 }
 
 pub const SIZE: dtype::Addr = 0x1000;
