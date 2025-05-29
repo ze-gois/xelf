@@ -8,7 +8,7 @@ use human::info;
 #[derive(Debug)]
 pub struct Vector<'e> {
     pub counter: u64,
-    entries: *mut Entry<'e>,
+    pub entries: *mut Entry<'e>,
 }
 
 impl<'e> Default for Vector<'e> {
@@ -31,7 +31,7 @@ impl<'e> Vector<'e> {
         }
         let argv_p = argv_p as *mut *mut u8;
 
-        info!("Argument count: {:?}\n\n", counter);
+        // info!("Argument count: {:?}\n\n", counter);
         if counter == 0 {
             return (None, crate::Pointer(argv_pointer));
         }
@@ -43,7 +43,7 @@ impl<'e> Vector<'e> {
             // Align size to page boundary
             let aligned_size = (size + memory::page::SIZE - 1) & !(memory::page::SIZE - 1);
 
-            let result = memory::mmap::mmap(
+            let result = memory::mmap(
                 ptr::null_mut(),
                 aligned_size,
                 memory::mmap::prot::READ | memory::mmap::prot::WRITE,
@@ -68,7 +68,7 @@ impl<'e> Vector<'e> {
                 let arg_ptr = argv_p.add(i as usize);
                 let entry = Entry::from_pointer(arg_ptr, i);
                 ptr::write(entries_ptr.add(i as usize), entry);
-                info!("Arg {}: {:?}\n", i, (*entries_ptr.add(i as usize)).value);
+                // info!("Arg {}: {:?}\n", i, (*entries_ptr.add(i as usize)).value);
             }
         }
 
@@ -158,7 +158,7 @@ impl<'e> Drop for Vector<'e> {
                 let aligned_size = (size + memory::page::SIZE - 1) & !(memory::page::SIZE - 1);
                 // let aligned_size = memory::page::align_to_lower_page(size);
 
-                let _ = memory::mmap::munmap(self.entries as *mut u8, aligned_size);
+                let _ = memory::munmap(self.entries as *mut u8, aligned_size);
             }
         }
     }

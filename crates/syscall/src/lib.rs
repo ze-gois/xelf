@@ -10,6 +10,7 @@ pub mod open;
 pub mod read;
 pub mod write;
 
+pub use arch::memory::mmap;
 pub use exit::exit;
 pub use open::{openat, openat4};
 pub use read::read;
@@ -20,6 +21,8 @@ pub enum Number {
     Write = 1,
     OpenAt = 257,
     Read = 0,
+    MMap = 9,
+    MUnMap = 11,
 }
 
 impl Number {

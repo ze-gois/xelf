@@ -6,7 +6,7 @@ pub use callable::*;
 pub use stacking::*;
 
 pub type _Pointer = *mut u64;
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Pointer(pub _Pointer);
 
 pub type _Byte = *mut u8;
