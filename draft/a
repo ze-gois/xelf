@@ -1,0 +1,16 @@
+// let entries = (0..counter).for_each(|i| unsafe {
+        //     let argv_pe = argv_p.offset(i as isize);
+
+        //     let e = Entry::from_pointer(argv_pe, i);
+        //     // e.print();
+        //     info!(
+        //         "\n\"{:?}\"{:?}\"{:?}\"\n",
+        //         e.pointer,
+        //         e,
+        //         e.value.as_bytes().as_ptr()
+        //     );
+        //     for i in 0..e.value.len() {
+        //         info!("\t{:?}\n", (*argv_pe).offset(i as isize));
+        //     }
+        // });
+        // // let vector = Self { counter, entries };

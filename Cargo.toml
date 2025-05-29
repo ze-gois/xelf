@@ -24,7 +24,7 @@ path = "src/lib.rs"
 test = false
 
 [[bin]]
-name = "xelf2"
+name = "xelf"
 path = "src/main.rs"
 test = false
 
