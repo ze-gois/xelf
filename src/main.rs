@@ -5,8 +5,9 @@ use xelf;
 
 #[unsafe(no_mangle)]
 pub extern "C" fn entry(stack_pointer: *mut u64, _stack_base: *mut u64) -> ! {
-    let _ = arch::memory::Stack::from_pointer(arch::Pointer(stack_pointer));
+    let stack = arch::memory::Stack::from_pointer(arch::Pointer(stack_pointer));
 
+    stack.print();
     // let Some(argv) = stack.arguments else arch::memory::stack::arguments::Vector::default();
 
     // info!("\n{:?}\n", stack);

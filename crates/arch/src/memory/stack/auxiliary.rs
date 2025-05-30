@@ -25,6 +25,10 @@ impl Default for Vector {
 }
 
 impl Vector {
+    pub fn from_pointer(auxv_pointer: crate::Pointer) -> Self {
+        Self::default()
+    }
+
     pub fn new(entries: *mut Entry) -> Self {
         Self {
             entries,
@@ -85,7 +89,9 @@ impl Vector {
         self.set_by_type_id(atype.to(), value);
     }
 
-    pub fn print(&mut self) {
+    pub fn print(self) {
+        info!("tobeaprint");
+        return ();
         let count = self.count();
 
         (0..count).for_each(|av| {

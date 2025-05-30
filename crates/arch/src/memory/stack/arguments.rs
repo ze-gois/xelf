@@ -71,7 +71,11 @@ impl<'e> Vector<'e> {
     }
 
     pub fn print(&self) {
-        info!("{:?}\n", self);
+        info!("Arguments {{\n");
+        for c in 0..self.counter {
+            info!("\t{:?}\n", unsafe { *self.entries.add(c as usize) })
+        }
+        info!("}} Arguments \n");
     }
 
     /// Prints all arguments for debugging purposes

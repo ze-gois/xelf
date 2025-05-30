@@ -90,17 +90,17 @@ impl<'e> Vector<'e> {
             entries: entries_ptr,
         };
 
-        environment.print();
         environment
     }
 
     pub fn print(&self) {
-        info!("Environment variables: {}\n", self.counter);
-        for i in 0..self.counter {
-            if let Some(entry) = self.get(i) {
-                info!("Env #{}: '{}' == '{}'\n", i, entry.key, entry.value);
+        info!("Environment {{\n");
+        for c in 0..self.counter {
+            if let Some(entry) = self.get(c) {
+                info!("\t{}={}'\n", entry.key, entry.value);
             }
         }
+        info!("}}Environment\n");
     }
 
     /// Gets an entry at the specified index

@@ -40,26 +40,9 @@ impl<'a, 'b> Stack<'a, 'b> {
 
     pub fn print(&self) {
         info!("--- Stack Contents ---\n");
-
-        info!("Arguments:\n");
-        if let Some(args) = &self.arguments {
-            args.print();
-        } else {
-            arguments::Vector::default().print();
-        }
-
-        info!("Environment Variables:\n");
-        if let Some(env) = &self.environment {
-            env.print();
-        } else {
-            environment::Vector::default().print();
-        }
-
-        // self.auxiliary
-        //     .as_ref()
-        //     .unwrap_or_else(|| &auxiliary::Vector::default())
-        //     .print();
-
+        self.arguments.print();
+        self.environment.print();
+        self.auxiliary.print();
         info!("---------------------\n");
     }
 }
