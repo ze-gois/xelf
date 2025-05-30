@@ -8,26 +8,29 @@ use human::info;
 #[derive(Debug)]
 pub struct Stack<'a, 'b> {
     pub pointer: crate::Pointer,
-    pub arguments: Option<arguments::Vector<'a>>,
-    pub environment: Option<environment::Vector<'b>>,
-    pub auxiliary: Option<auxiliary::Vector>,
+    pub arguments: arguments::Vector<'a>,
+    pub environment: environment::Vector<'b>,
+    pub auxiliary: auxiliary::Vector,
     pub latter: crate::Pointer,
 }
 
 impl<'a, 'b> Stack<'a, 'b> {
     pub fn from_pointer(stack_pointer: crate::Pointer) -> Self {
-        let (arguments, pointer) = arguments::Vector::from_pointer(stack_pointer);
-        let (environment, pointer) = environment::Vector::from_pointer(pointer);
-        // let (auxiliary, pointer) = auxiliary::Vector::from_pointer(pointer);
+        let arguments = arguments::Vector::from_pointer(stack_pointer);
 
-        let auxiliary = None;
+        let environment_pointer = unsafe { stack_pointer.0.add(2 + arguments.counter as usize) };
+        let environment = environment::Vector::from_pointer(crate::Pointer(environment_pointer));
+
+        let auxiliary_pointer =
+            unsafe { environment_pointer.add(2 + environment.counter as usize) };
+        let auxiliary = auxiliary::Vector::from_pointer(crate::Pointer(auxiliary_pointer));
 
         Self {
             pointer: stack_pointer,
             arguments,
             environment,
             auxiliary,
-            latter: pointer,
+            latter: stack_pointer,
         }
     }
 
@@ -37,26 +40,26 @@ impl<'a, 'b> Stack<'a, 'b> {
 
     pub fn print(&self) {
         info!("--- Stack Contents ---\n");
-        
+
         info!("Arguments:\n");
         if let Some(args) = &self.arguments {
             args.print();
         } else {
             arguments::Vector::default().print();
         }
-        
+
         info!("Environment Variables:\n");
         if let Some(env) = &self.environment {
             env.print();
         } else {
             environment::Vector::default().print();
         }
-        
+
         // self.auxiliary
         //     .as_ref()
         //     .unwrap_or_else(|| &auxiliary::Vector::default())
         //     .print();
-        
+
         info!("---------------------\n");
     }
 }

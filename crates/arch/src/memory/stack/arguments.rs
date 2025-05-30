@@ -21,26 +21,18 @@ impl<'e> Default for Vector<'e> {
 }
 
 impl<'e> Vector<'e> {
-    pub fn from_pointer(argv_pointer: crate::Pointer) -> (Option<Self>, crate::Pointer) {
-        let argv_pointer: *mut u64 = argv_pointer.0;
-        let counter;
-        let argv_p;
-        unsafe {
-            counter = *argv_pointer;
-            argv_p = argv_pointer.add(1);
-        }
-        let argv_p = argv_p as *mut *mut u8;
+    pub fn from_pointer(argv_pointer: crate::Pointer) -> Self {
+        let counter = unsafe { *argv_pointer.0 };
+        let entries_pointer = unsafe { argv_pointer.0.add(1) as *mut *mut u8 };
+        let environment_pointer = unsafe { argv_pointer.0.add(2 + counter as usize) };
 
-        // info!("Argument count: {:?}\n\n", counter);
         if counter == 0 {
-            return (None, crate::Pointer(argv_pointer));
+            return Self::default();
         }
 
-        // Allocate memory using mmap
-        let entries_ptr = unsafe {
+        let entries_mmap_pointer = unsafe {
             let size = core::mem::size_of::<Entry<'e>>() * counter as usize;
 
-            // Align size to page boundary
             let aligned_size = (size + memory::page::SIZE - 1) & !(memory::page::SIZE - 1);
 
             let result = memory::mmap(
@@ -55,9 +47,8 @@ impl<'e> Vector<'e> {
             match result {
                 Ok(ptr) => ptr as *mut Entry<'e>,
                 Err(_) => {
-                    // Allocation failed, return default vector
                     info!("Failed to allocate memory for arguments vector\n");
-                    return (Some(Self::default()), crate::Pointer(argv_pointer));
+                    return Self::default();
                 }
             }
         };
@@ -65,19 +56,18 @@ impl<'e> Vector<'e> {
         // Create entries from the argument pointers
         for i in 0..counter {
             unsafe {
-                let arg_ptr = argv_p.add(i as usize);
-                let entry = Entry::from_pointer(arg_ptr, i);
-                ptr::write(entries_ptr.add(i as usize), entry);
-                // info!("Arg {}: {:?}\n", i, (*entries_ptr.add(i as usize)).value);
+                let entry_pointer = entries_pointer.add(i as usize);
+                let entry = Entry::from_pointer(entry_pointer, i);
+                ptr::write(entries_mmap_pointer.add(i as usize), entry);
             }
         }
 
-        let vector = Self {
+        let arguments = Self {
             counter,
-            entries: entries_ptr,
+            entries: entries_mmap_pointer,
         };
 
-        (Some(vector), crate::Pointer(argv_pointer))
+        arguments
     }
 
     pub fn print(&self) {
