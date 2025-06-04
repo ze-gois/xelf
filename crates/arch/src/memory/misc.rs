@@ -15,3 +15,16 @@ pub fn length(s: *const u8) -> usize {
 
     len
 }
+
+pub fn find(s: *const u8, c: u8) -> Option<usize> {
+    let mut index = 0;
+
+    while unsafe { *s.add(index) } != 0 {
+        if unsafe { *s.add(index) } == c {
+            return Some(index);
+        }
+        index += 1;
+    }
+
+    None
+}
