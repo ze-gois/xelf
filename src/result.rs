@@ -1,3 +1,4 @@
+use crate::dtype::Error as DTypeError;
 use human::result::Error as HumanError;
 use syscall::result::Error as SyscallError;
 
@@ -6,6 +7,7 @@ use syscall::result::Error as SyscallError;
 pub enum Error {
     Syscall(SyscallError),
     Human(HumanError),
+    DType(DTypeError),
     TODO,
 }
 
