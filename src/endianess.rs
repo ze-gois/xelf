@@ -1,17 +1,7 @@
-pub mod macros;
-use crate::Result;
-use crate::elf_define_type;
-
-// #[derive(Copy, Clone, Eq, PartialEq)]
-// pub enum Endianness {
-//     Little,
-//     Big,
-// }
-
-use crate::dtype::UChar as T;
+use crate::arch::UnsignedChar as T;
 
 #[repr(C)]
-pub enum Endianness {
+pub enum Endianess {
     /// Invalid data encoding
     None = 0,
     /// 2's complement, little endian
@@ -24,7 +14,7 @@ pub enum Endianness {
     Undefined = 4,
 }
 
-type E = Endianness;
+type E = Endianess;
 
 impl E {
     pub fn from(b: T) -> Self {
@@ -58,39 +48,16 @@ impl E {
     }
 }
 
-use core::fmt::{Debug, Display, Formatter};
+use core::fmt::{Debug, Display, Formatter, Result};
 
 impl Display for E {
-    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "{}", self.as_str())
     }
 }
 
 impl Debug for E {
-    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "{}", self.as_str())
     }
 }
-
-pub trait ELFType {
-    type Inner;
-    const SIZE_BITS: usize;
-    const SIZE_BYTES: usize;
-}
-
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum Error {
-    InvalidData(isize),
-    InvalidEndian,
-    InvalidType,
-    ShorterData(isize),
-}
-
-elf_define_type!(pub SXWord, i64); //Unsigned program address
-elf_define_type!(pub UChar, u8); //Unsigned file offset
-elf_define_type!(pub Half, u16); //Unsigned medium integer
-elf_define_type!(pub SWord, i32); //Unsigned integer
-elf_define_type!(pub XWord, u64); //Signed integer
-elf_define_type!(pub Word, u32); //Unsigned long integer
-elf_define_type!(pub Off, u64); //Signed long integer
-elf_define_type!(pub Addr, u64); //Unsigned small integer

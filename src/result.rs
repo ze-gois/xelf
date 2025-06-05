@@ -1,4 +1,4 @@
-use crate::dtype::Error as DTypeError;
+use crate::dtype2::Error as DTypeError;
 use human::result::Error as HumanError;
 use syscall::result::Error as SyscallError;
 
@@ -36,6 +36,7 @@ impl Into<isize> for Error {
         match self {
             Error::Human(_e) => -4,
             Error::Syscall(_e) => -2,
+            Error::DType(_e) => -3,
             Error::TODO => -1,
         }
     }

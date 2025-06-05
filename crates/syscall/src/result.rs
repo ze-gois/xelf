@@ -1,5 +1,10 @@
 use result::ErrorTrait;
 
+use crate::close::Error as CloseError;
+use crate::lseek::Error as LSeekError;
+use crate::mmap::Error as MMapError;
+use crate::mprotect::Error as MProtectError;
+use crate::munmap::Error as MUnMapError;
 use crate::open::Error as OpenError;
 use crate::read::Error as ReadError;
 use crate::write::Error as WriteError;
@@ -10,6 +15,11 @@ pub enum Error {
     Open(OpenError),
     Read(ReadError),
     Write(WriteError),
+    LSeek(LSeekError),
+    MMap(MMapError),
+    Close(CloseError),
+    MProtect(MProtectError),
+    MUnMap(MUnMapError),
     TODO,
 }
 
@@ -25,6 +35,11 @@ impl ErrorTrait for Error {
             Error::Open(err) => err.describe(),
             Error::Read(err) => err.describe(),
             Error::Write(err) => err.describe(),
+            Error::LSeek(err) => err.describe(),
+            Error::MMap(err) => err.describe(),
+            Error::Close(err) => err.describe(),
+            Error::MProtect(err) => err.describe(),
+            Error::MUnMap(err) => err.describe(),
             Error::TODO => "TODO",
         }
     }
@@ -34,6 +49,11 @@ impl ErrorTrait for Error {
             Error::Open(err) => err.advert(),
             Error::Read(err) => err.advert(),
             Error::Write(err) => err.advert(),
+            Error::LSeek(err) => err.advert(),
+            Error::MMap(err) => err.advert(),
+            Error::Close(err) => err.advert(),
+            Error::MProtect(err) => err.advert(),
+            Error::MUnMap(err) => err.advert(),
             Error::TODO => None,
         }
     }

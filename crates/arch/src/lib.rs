@@ -4,6 +4,8 @@ pub mod macros;
 pub mod memory;
 pub mod traits;
 
+pub use human::info;
+
 #[cfg(target_arch = "x86_64")]
 pub use x86_64 as arch;
 #[cfg(target_arch = "x86_64")]
