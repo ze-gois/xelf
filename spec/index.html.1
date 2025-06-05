@@ -1,0 +1,56 @@
+<H3>ELF and ABI Standards</H3>
+<P>
+The Executable and Linking Format (ELF) Specification describes the widely
+used executable file format. The Application Binary Interface (ABI)
+Specifications define Operating System and Application interfaces that are
+neccesary to construct an execution environment for applications.
+<P>
+<UL>
+<LI>
+<A HREF="/elf/TIS1.1.pdf">Tool Interface Standard (TIS) Portable Formats
+Specification, version 1.1</A>. 1993 document containing an extract of the
+x86 ABI version 3.0, DWARF 2.0 draft and OMF
+<LI>
+<A HREF="/elf/elf.pdf">Tool Interface Standard (TIS) Portable Formats
+Specification, version 1.2</A>. 1995 document containing only the ELF
+Specification. This version breaks ELF into 3 seperate books, ELF, x86 psABI,
+and the Operating System Specific Specification for SVR4. This appears to be
+the most current TIS specification.
+<LI>
+<A HREF="/elf/gabi41.pdf">System V ABI Edition 4.1</A>. 1997 document containing
+the most recent ABI standard. This document is known as the Generic ABI (gABI)
+and must be used in conjunction with a Processor Suppliment aBI (psABI)
+document.
+<LI>
+<A HREF="/elf/gabi4+/contents.html">System V ABI - DRAFT 24 April 2001</A>. 2001
+update to chapters 4 and 5 of the gABI. This version is one of several
+updates listed in draft status.
+</UL>
+<H4>Processor Specific ELF documents</H4>
+<UL>
+<LI>
+<A HREF="/elf/abi386-4.pdf">System V Application Binary Interface Intel386 Architecture Processor Supplment, Fourth Edition</A>
+<LI>
+<A HREF="/elf/IA64-SysV-psABI.pdf">Intel Itanium Processor specific ABI</A>
+<LI>
+<A HREF="/elf/x86_64-abi-0.95.pdf">System V Application Binary Interface
+x86-64 Architecture Processor Supplement Draft Version 0.95</A>
+|
+<A HREF="/elf/x86_64-abi-0.98.pdf">v0.98</A>
+|
+<A HREF="/elf/x86_64-abi-0.99.pdf">v0.99</A>
+<LI>
+<A HREF="/elf/mipsabi.pdf">System V Application Binary Interface MIPS RISC Processor Supplment, 3rd Edition</A>
+<LI>
+<A HREF="/elf/elfspec_ppc.pdf">System V Application Binary Interface PowerPC
+Processor Supplment</A>.  This is one of two known PPC ELF standards.
+This one was developed by SunSoft. The two versions are not identical,
+and applications can only conform to one or the other,
+while it seems possible for an implementation to support both simulaneously.
+<LI>
+<A HREF="/elf/ARMELF.pdf">ARM Processor Supplment</A>
+<LI>
+<A HREF="/elf/elf-pa.pdf">Processor-Specific ELF Supplement for PA-RISC</A>
+<LI>
+<A HREF="/elf/m8-16eabi.pdf">Motorola 8 and 16 bit Embedded ABI</A>
+</UL>
