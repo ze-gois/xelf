@@ -1,5 +1,7 @@
 pub mod flags;
 
+pub use flags::*;
+
 use super::Number;
 use arch::{Arch, Callable};
 

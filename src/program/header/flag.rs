@@ -1,4 +1,4 @@
-pub use crate::arch::Word as T;
+pub use crate::dtype::Word as T;
 
 #[repr(C)]
 #[derive(Clone, Copy, PartialEq)]

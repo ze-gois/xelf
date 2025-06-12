@@ -11,6 +11,7 @@ use crate::elf_define_type;
 use crate::dtype::UChar as T;
 
 #[repr(C)]
+#[derive(Clone, Copy)]
 pub enum Endianness {
     /// Invalid data encoding
     None = 0,

@@ -1,4 +1,4 @@
-use crate::arch::Word as T;
+use crate::dtype::Word as T;
 
 /// # Section indices
 ///

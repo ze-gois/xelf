@@ -1,4 +1,4 @@
-pub use crate::arch::XWord as T;
+pub use crate::dtype::XWord as T;
 
 pub const MASK_PROC: T = 0xF0000000; /* Processor-specific mask */
 

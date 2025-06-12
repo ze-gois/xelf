@@ -171,8 +171,8 @@ impl Header {
     }
 }
 
-impl std::fmt::Display for Header {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Display for Header {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "tSection Header:")?;
         write!(f, "\tname: {:?}", self.get_name_string())?;
         write!(f, "\tstype: {:?}", self.get_stype_str())?;
@@ -188,8 +188,8 @@ impl std::fmt::Display for Header {
     }
 }
 
-impl std::fmt::Debug for Header {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Debug for Header {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(
             f,
             "Header {{ name: {}, stype: {}, flags: {}, addr: {}, offset: {}, size: {}, link: {}, info: {}, addralign: {}, entsize: {} }}",

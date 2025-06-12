@@ -91,7 +91,7 @@ impl Type {
     }
 }
 
-use std::fmt::{Debug, Display, Formatter, Result};
+use core::fmt::{Debug, Display, Formatter, Result};
 
 type E = Type;
 

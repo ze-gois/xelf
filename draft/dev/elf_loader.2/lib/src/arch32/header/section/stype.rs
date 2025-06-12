@@ -99,7 +99,7 @@ impl Type {
 
 type E = Type;
 
-use std::fmt::{Debug, Display, Formatter, Result};
+use core::fmt::{Debug, Display, Formatter, Result};
 
 impl Display for E {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {

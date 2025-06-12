@@ -1,4 +1,4 @@
-use crate::dtype2::Error as DTypeError;
+use crate::dtype::Error as DTypeError;
 use human::result::Error as HumanError;
 use syscall::result::Error as SyscallError;
 

@@ -65,8 +65,8 @@ impl Table {
     }
 }
 
-impl std::fmt::Debug for Table {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Debug for Table {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         writeln!(f, "Section table: {{")?;
         writeln!(f, "\tOffset:{:?}", self.offset)?;
         writeln!(f, "\tEntries: {{")?;
@@ -82,8 +82,8 @@ impl std::fmt::Debug for Table {
     }
 }
 
-impl std::fmt::Display for Table {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Display for Table {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         writeln!(f, "Section table: {{")?;
         writeln!(f, "\tOffset:{:?}", self.offset)?;
         writeln!(f, "\tEntries: {{")?;
