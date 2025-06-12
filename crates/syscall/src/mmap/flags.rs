@@ -1,6 +1,6 @@
 #[repr(i32)]
 #[derive(Clone, Copy)]
-pub enum Map {
+pub enum Flag {
     Shared = 0x01,
     Private = 0x02,
     SharedValidate = 0x03,
@@ -19,13 +19,13 @@ pub enum Map {
     FixedNoReplace = 0x100000,
 }
 
-impl Map {
+impl Flag {
     fn to(self) -> i32 {
         self as i32
     }
 }
 
-impl core::ops::BitOr for Map {
+impl core::ops::BitOr for Flag {
     type Output = i32;
 
     fn bitor(self, rhs: Self) -> Self::Output {
@@ -33,7 +33,7 @@ impl core::ops::BitOr for Map {
     }
 }
 
-impl core::ops::BitOr<i32> for Map {
+impl core::ops::BitOr<i32> for Flag {
     type Output = i32;
 
     fn bitor(self, rhs: i32) -> Self::Output {

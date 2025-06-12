@@ -244,7 +244,7 @@ impl ELF {
         }
     }
 
-    pub fn load_programs(&self) -> *mut libc::c_void {
+    pub fn load_programs(&mut self) -> bool {
         let mut program_segments: Vec<program::Entry> = self
             .program_header_table
             .clone()
@@ -314,7 +314,7 @@ impl ELF {
                     0,
                 );
 
-                if pointer == libc::MAP_FAILED {
+                if pointer == syscall::MAP_FAILED {
                     panic!(
                         "mmap failed: {} (address: {:p}, size: 0x{:x})",
                         std::io::Error::last_os_error(),
@@ -366,7 +366,7 @@ impl ELF {
             );
 
             unsafe {
-                if libc::mprotect(
+                if syscall::mprotect(
                     mmap_segment_pointer,
                     mmap_virtual_address_length as usize,
                     segment_protection_flags,
@@ -385,7 +385,7 @@ impl ELF {
 
         if do_unmap {
             unsafe {
-                libc::munmap(
+                syscall::munmap(
                     program_lowest_virtual_address as *mut core::ffi::c_void,
                     program_virtual_address_length as usize,
                 );
@@ -410,7 +410,7 @@ impl ELF {
         }
     }
 
-    pub fn execute<P: AsRef<std::path::Path>>(filepath: P) -> ! {
+    pub fn execute(filepath: &str) -> ! {
         let elf_file = Self::read_from_filepath(filepath);
         let program_lowest_virtual_address = elf_file.load_programs();
 

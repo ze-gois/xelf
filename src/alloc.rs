@@ -1,9 +1,8 @@
 use crate::info;
-use core::default::Default;
 use core::ptr;
 
-pub fn alloc<T: Default + Sized>(counter: usize) -> Option<*mut T> {
-    let pointer = unsafe {
+pub fn alloc<T: Sized>(counter: usize) -> Option<*mut T> {
+    let pointer = {
         let size = core::mem::size_of::<T>() * counter;
 
         let aligned_size = (size + arch::memory::page::SIZE - 1) & !(arch::memory::page::SIZE - 1);
@@ -11,8 +10,8 @@ pub fn alloc<T: Default + Sized>(counter: usize) -> Option<*mut T> {
         let result = syscall::mmap(
             ptr::null_mut(),
             aligned_size,
-            syscall::mmap::prot::READ | syscall::mmap::prot::WRITE,
-            syscall::mmap::flag::PRIVATE | syscall::mmap::flag::ANONYMOUS,
+            (syscall::mmap::Prot::Read as i32) | (syscall::mmap::Prot::Write as i32),
+            (syscall::mmap::Flag::Private as i32) | (syscall::mmap::Flag::Anonymous as i32),
             -1,
             0,
         );

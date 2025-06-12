@@ -40,7 +40,7 @@ pub struct Identifier {
     pub class: T,
     /// # Data encoding of the object file data structures
     ///
-    /// *endianess was originaly identified with "data"*
+    /// *endianness was originaly identified with "data"*
     ///
     /// |Name|Value|Meaning|
     /// |:-:|:-:|:-:|
@@ -53,7 +53,7 @@ pub struct Identifier {
     /// object file will match that of the running program. For environments that
     /// support both byte orders, a processor-specific flag in the e_flags field,
     /// described below, may be used to identify the application’s operating mode.
-    pub endianess: T,
+    pub endianness: T,
     /// # Version of the object file format.
     ///
     /// Currently, this field has the value
@@ -86,7 +86,7 @@ impl Clone for Identifier {
         Self {
             mag: self.mag.clone(),
             class: self.class.clone(),
-            endianess: self.endianess.clone(),
+            endianness: self.endianness.clone(),
             version: self.version.clone(),
             osabi: self.osabi.clone(),
             abiversion: self.abiversion.clone(),
@@ -102,12 +102,12 @@ impl Identifier {
     ///
     /// ```rust
     /// let path : &str = "./data/symver.powerpc64.so";
-    /// let identifier = lib::header::elf::Identifier::read_from_filepath(&path);
+    /// let identifier = lib::header::elf::Identifier::from_filepath(&path);
     /// println!("{}",identifier);
     /// ```
-    pub fn read_from_filepath(filepath: &str) -> Self {
+    pub fn from_filepath(filepath: &str) -> crate::Result<Self> {
         let file_descriptor = crate::open_filepath(filepath);
-        Self::read_from_file_descriptor(file_descriptor)
+        Self::from_file_descriptor(file_descriptor)
     }
 
     /// Loads ELF Identifier from a filemap
@@ -116,35 +116,36 @@ impl Identifier {
     /// let path : &str = "./data/symver.powerpc64.so";
     /// let file = core::fs::File::open(path).unwrap();
     /// let map = unsafe { memmap2::Mmap::map(&file).unwrap() };
-    /// let identifier = lib::header::elf::Identifier::read_from_memmap(&map);
+    /// let identifier = lib::header::elf::Identifier::from_memmap(&map);
     /// println!("{}",identifier);
     /// ```
-    pub fn read_from_file_descriptor(file_descriptor: isize) -> Self {
+    pub fn from_file_descriptor(file_descriptor: isize) -> crate::Result<Self> {
         let mut offset = 0;
-        let endianess = Endianness::LSB;
+        let endianness = Endianness::LSB;
 
-        Self {
+        syscall::lseek(file_descriptor as i32, 0, syscall::lseek::Flag::SET.to());
+        Ok(Self {
             mag: [
-                T::read(file_descriptor, &endianess),
-                T::read(file_descriptor, &endianess),
-                T::read(file_descriptor, &endianess),
-                T::read(file_descriptor, &endianess),
+                T::read(file_descriptor, endianness)?,
+                T::read(file_descriptor, endianness)?,
+                T::read(file_descriptor, endianness)?,
+                T::read(file_descriptor, endianness)?,
             ],
-            class: T::read(file_descriptor, &endianess),
-            endianess: T::read(file_descriptor, &endianess),
-            version: T::read(file_descriptor, &endianess),
-            osabi: T::read(file_descriptor, &endianess),
-            abiversion: T::read(file_descriptor, &endianess),
-            padding: T::read(file_descriptor, &endianess),
+            class: T::read(file_descriptor, endianness)?,
+            endianness: T::read(file_descriptor, endianness)?,
+            version: T::read(file_descriptor, endianness)?,
+            osabi: T::read(file_descriptor, endianness)?,
+            abiversion: T::read(file_descriptor, endianness)?,
+            padding: T::read(file_descriptor, endianness)?,
             unassigned: [
-                T::read(file_descriptor, &endianess),
-                T::read(file_descriptor, &endianess),
-                T::read(file_descriptor, &endianess),
-                T::read(file_descriptor, &endianess),
-                T::read(file_descriptor, &endianess),
+                T::read(file_descriptor, endianness)?,
+                T::read(file_descriptor, endianness)?,
+                T::read(file_descriptor, endianness)?,
+                T::read(file_descriptor, endianness)?,
+                T::read(file_descriptor, endianness)?,
             ],
-            nident: T::read(file_descriptor, &endianess),
-        }
+            nident: T::read(file_descriptor, endianness)?,
+        })
     }
 
     /// Each byte of the array is indexed symbolically using the names in the Table
@@ -174,7 +175,7 @@ impl Identifier {
             self.mag[2],
             self.mag[3],
             self.class,
-            self.endianess,
+            self.endianness,
             self.version,
             self.osabi,
             self.abiversion,
@@ -205,7 +206,7 @@ impl Identifier {
     }
 
     pub fn get_endianness(&self) -> Endianness {
-        Endianness::from(self.endianess)
+        Endianness::from(self.endianness)
     }
 
     pub fn get_endianness_str(&self) -> &str {
@@ -251,7 +252,7 @@ impl core::fmt::Display for Identifier {
             ",
             self.class,
             self.get_class_str(),
-            self.endianess,
+            self.endianness,
             self.get_endianness_str(),
             self.copy_version(),
             self.osabi,
@@ -277,7 +278,7 @@ impl core::fmt::Display for Identifier {
 //             )
 //             .field(
 //                 "Data",
-//                 &format!("{} ({})", self.endianess, self.get_endianness_str()),
+//                 &format!("{} ({})", self.endianness, self.get_endianness_str()),
 //             )
 //             .field("Version", &self.copy_version())
 //             .field(

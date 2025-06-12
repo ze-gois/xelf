@@ -42,10 +42,10 @@ impl Entry {
     /// cause position-independent code uses relative addressing between segments, the
     /// difference between virtual addresses in memory must match the difference be-
     /// tween virtual addresses in the file.
-    pub fn load(&self, elf_file: &crate::ELF) -> *mut libc::c_void {
-        // if self.header.get_ptype() != crate::program::header::Type::Load {
-        //     return core::ptr::null_mut();
-        // }
+    pub fn load(&mut self) -> bool {
+        if self.header.get_ptype() != super::header::Type::Load {
+            return false;
+        }
 
         // // let mut offset = self.header.offset;
         // let mut offset = self.header.offset & crate::data::memory::ALIGN;
@@ -77,7 +77,7 @@ impl Entry {
         //         crate::program::header::Flag::from_posix(flags).to_posix() as libc::c_int,
         //     );
         // }
-        core::ptr::null_mut()
+        false
     }
 
     pub fn is_interpreter(&self) -> bool {

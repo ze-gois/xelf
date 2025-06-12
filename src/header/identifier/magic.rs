@@ -1,4 +1,4 @@
-use crate::arch::UnsignedChar as T;
+use crate::dtype::UChar as T;
 
 #[derive(Clone, Copy)]
 #[repr(C)]

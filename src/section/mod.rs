@@ -1,4 +1,4 @@
-use crate::arch;
+use crate::dtype;
 
 /// # Sections header
 ///
@@ -28,26 +28,50 @@ pub mod standard;
 
 #[repr(C)]
 pub struct Table {
-    pub offset: arch::Off,
-    pub entries: Vec<Entry>,
+    pub offset: dtype::Off,
+    pub counter: usize,
+    pub entries: *mut Entry,
+    pub cursor: usize,
+}
+
+impl core::iter::Iterator for Table {
+    type Item = Entry;
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.cursor >= self.counter {
+            return None;
+        }
+        let entry = unsafe { (*self.entries.add(self.cursor)).clone() };
+        Some(entry)
+    }
 }
 
 impl Table {
-    pub fn read_from_filepath<P: AsRef<std::path::Path>>(filepath: P) -> Self {
-        let file = std::fs::File::open(filepath).unwrap();
-        let filemap = unsafe { memmap2::Mmap::map(&file).unwrap() };
-        Self::read_from_memmap(&filemap)
+    pub fn read_from_filepath(filepath: &str) -> Self {
+        let file_descriptor = crate::open_filepath(filepath);
+        Self::read_from_file_descriptor(file_descriptor)
     }
 
-    pub fn read_from_memmap(file_descriptor: isize) -> Self {
-        let elf_header = ELFHeader::read_from_file_descriptor(&file_descriptor);
-        Self::read_from_elf_header(&file_descriptor, &elf_header)
+    pub fn read_from_file_descriptor(file_descriptor: isize) -> Self {
+        let elf_header = ELFHeader::read_from_file_descriptor(file_descriptor);
+        Self::read_from_elf_header(file_descriptor, &elf_header)
     }
 
-    pub fn read_from_elf_header(filemap: &memmap2::Mmap, elf_header: &ELFHeader) -> Self {
+    pub fn read_from_elf_header(
+        file_descriptor: isize,
+        elf_header: &ELFHeader,
+    ) -> crate::Result<Self> {
         let mut offset = elf_header.shoff;
-        let endianess = elf_header.get_identifier().get_endianess();
+        let endianness = elf_header.get_identifier().get_endianness();
         let number_of_entries = elf_header.shnum;
+
+        let entries_pointer = crate::alloc::<Entry>(number_of_entries.0 as usize)?;
+
+        for e in 0..number_of_entries.0 as usize {
+            unsafe {
+                *entries_pointer.add(e) =
+                    Entry::read_from_file_descriptor(file_descriptor, endianness)?
+            }
+        }
 
         Self {
             offset,
@@ -58,15 +82,15 @@ impl Table {
                         &mut offset,
                         &endianess,
                     ),
-                    content: vec![],
+                    content: core::ptr::null_mut(),
                 })
                 .collect::<Vec<crate::SectionEntry>>(),
         }
     }
 }
 
-impl std::fmt::Debug for Table {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Debug for Table {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         writeln!(f, "Section table: {{")?;
         writeln!(f, "\tOffset:{:?}", self.offset)?;
         writeln!(f, "\tEntries: {{")?;
@@ -82,8 +106,8 @@ impl std::fmt::Debug for Table {
     }
 }
 
-impl std::fmt::Display for Table {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Display for Table {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         writeln!(f, "Section table: {{")?;
         writeln!(f, "\tOffset:{:?}", self.offset)?;
         writeln!(f, "\tEntries: {{")?;

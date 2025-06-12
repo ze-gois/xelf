@@ -1,30 +1,31 @@
-use crate::arch;
+use crate::dtype;
 
 pub mod ptype;
 pub use ptype::Type;
 
 pub mod flag;
 pub use flag::Flag;
+use syscall::lseek;
 
 #[derive(Clone, Copy)]
 #[repr(C)]
 pub struct Header {
     /// Type of segment
-    pub ptype: arch::Word,
+    pub ptype: dtype::Word,
     /// Segment attributes
-    pub flags: arch::Word,
+    pub flags: dtype::Word,
     /// Offset in file
-    pub offset: arch::Off,
+    pub offset: dtype::Off,
     /// Virtual address in memory
-    pub vaddr: arch::Addr,
+    pub vaddr: dtype::Addr,
     /// Reserved
-    pub paddr: arch::Addr,
+    pub paddr: dtype::Addr,
     /// Size of segment in file
-    pub filesz: arch::XWord,
+    pub filesz: dtype::XWord,
     /// Size of segment in memory
-    pub memsz: arch::XWord,
+    pub memsz: dtype::XWord,
     /// Alignment of segment
-    pub align: arch::XWord,
+    pub align: dtype::XWord,
 }
 
 impl Header {
@@ -35,14 +36,10 @@ impl Header {
     /// let program_header = lib::header::Program::read_from_memmap(&map);
     /// println!("{}",program_header);
     /// ```
-    pub fn read_nth_from_filepath<P: AsRef<std::path::Path>>(
-        filepath: P,
-        index: arch::Half,
-    ) -> Self {
-        let file = std::fs::File::open(filepath).unwrap();
-        let file_descriptor = unsafe { memmap2::Mmap::map(&file).unwrap() };
-        let elf_header = crate::ELFHeader::read_from_file_descriptor(&file_descriptor);
-        Self::read_nth_from_elf_header(&file_descriptor, &elf_header, index)
+    pub fn read_nth_from_filepath(filepath: &str, index: dtype::Half) -> Self {
+        let file_descriptor = crate::open_filepath(filepath);
+        let elf_header = crate::ELFHeader::read_from_file_descriptor(file_descriptor);
+        Self::read_nth_from_elf_header(file_descriptor, &elf_header, index)
     }
 
     /// Loads ELF Identifier from a filemap
@@ -58,14 +55,17 @@ impl Header {
     /// println!("{}",program_header);
     /// ```
     pub fn read_nth_from_elf_header(
-        filemap: &memmap2::Mmap,
+        file_descriptor: isize,
         elf_header: &crate::ELFHeader,
-        index: arch::Half,
-    ) -> Self {
-        let mut offset = elf_header.shoff + (index * elf_header.shentsize) as arch::Off;
-        let endianess = elf_header.get_identifier().get_endianess();
+        index: dtype::Half,
+    ) -> crate::Result<Self> {
+        let offset = elf_header.shoff.0 + (index.0 * elf_header.shentsize.0) as u64;
 
-        Self::read_from_memmap(&filemap, &mut offset, &endianess)
+        syscall::lseek(file_descriptor as i32, offset as i64, lseek::Flag::SET.to());
+
+        let endianness = elf_header.get_identifier().get_endianness();
+
+        Self::read_from_file_descriptor(file_descriptor, endianness)
     }
 
     /// Loads ELF Identifier from a filemap
@@ -79,24 +79,23 @@ impl Header {
     ///     lib::header::Program::read_nth_from_elf_header(&filemap, &elf_header, index);
     /// println!("{}",program_header);
     /// ```
-    pub fn read_from_memmap(
-        filemap: &memmap2::Mmap,
-        offset: &mut arch::Off,
-        endianess: &arch::Endianess,
-    ) -> Self {
-        Self {
-            ptype: arch::read_and_seek_word(filemap, offset, &endianess),
-            flags: arch::read_and_seek_word(filemap, offset, &endianess),
-            offset: arch::read_and_seek_off(filemap, offset, &endianess),
-            vaddr: arch::read_and_seek_addr(filemap, offset, &endianess),
-            paddr: arch::read_and_seek_addr(filemap, offset, &endianess),
-            filesz: arch::read_and_seek_xword(filemap, offset, &endianess),
-            memsz: arch::read_and_seek_xword(filemap, offset, &endianess),
-            align: arch::read_and_seek_xword(filemap, offset, &endianess),
-        }
+    pub fn read_from_file_descriptor(
+        file_descriptor: isize,
+        endianness: dtype::Endianness,
+    ) -> crate::Result<Self> {
+        Ok(Self {
+            ptype: dtype::Word::read(file_descriptor, endianness)?,
+            flags: dtype::Word::read(file_descriptor, endianness)?,
+            offset: dtype::Off::read(file_descriptor, endianness)?,
+            vaddr: dtype::Addr::read(file_descriptor, endianness)?,
+            paddr: dtype::Addr::read(file_descriptor, endianness)?,
+            filesz: dtype::XWord::read(file_descriptor, endianness)?,
+            memsz: dtype::XWord::read(file_descriptor, endianness)?,
+            align: dtype::XWord::read(file_descriptor, endianness)?,
+        })
     }
 
-    pub fn copy_ptype(&self) -> arch::Word {
+    pub fn copy_ptype(&self) -> dtype::Word {
         self.ptype
     }
 
@@ -116,7 +115,7 @@ impl Header {
         )
     }
 
-    pub fn copy_flags(&self) -> arch::Word {
+    pub fn copy_flags(&self) -> dtype::Word {
         self.flags
     }
 
@@ -131,30 +130,6 @@ impl Header {
     pub fn flag_as_str_acronym(&self) -> &'static str {
         self.get_flags().as_str_acronym()
     }
-
-    pub fn copy_offset(&self) -> arch::Off {
-        self.offset
-    }
-
-    pub fn copy_vaddr(&self) -> arch::Addr {
-        self.vaddr
-    }
-
-    pub fn copy_paddr(&self) -> arch::Addr {
-        self.paddr
-    }
-
-    pub fn copy_filesz(&self) -> arch::XWord {
-        self.filesz
-    }
-
-    pub fn copy_memsz(&self) -> arch::XWord {
-        self.memsz
-    }
-
-    pub fn copy_align(&self) -> arch::XWord {
-        self.align
-    }
 }
 
 impl core::fmt::Display for Header {
@@ -162,12 +137,12 @@ impl core::fmt::Display for Header {
         write!(f, "ProgramHeader{{ ")?;
         write!(f, " Type: {:?} ", self.ptype_as_str())?;
         write!(f, " Flags: {:?} ", self.flag_as_str())?;
-        write!(f, " Offset: {:#x} ", self.copy_offset())?;
-        write!(f, " VirtAddr: {:#x} ", self.copy_vaddr())?;
-        write!(f, " PhysAddr: {:#x} ", self.copy_paddr())?;
-        write!(f, " FileSiz: {:#x} ", self.copy_filesz())?;
-        write!(f, " MemSiz: {:#x} ", self.copy_memsz())?;
-        write!(f, " Align: {:#x}}}", self.copy_align())
+        write!(f, " Offset: {:#x} ", self.offset.0)?;
+        write!(f, " VirtAddr: {:#x} ", self.vaddr.0)?;
+        write!(f, " PhysAddr: {:#x} ", self.paddr.0)?;
+        write!(f, " FileSiz: {:#x} ", self.filesz.0)?;
+        write!(f, " MemSiz: {:#x} ", self.memsz.0)?;
+        write!(f, " Align: {:#x}}}", self.align.0)
     }
 }
 
@@ -176,12 +151,12 @@ impl core::fmt::Debug for Header {
         f.debug_struct("Header")
             .field("ptype", &self.ptype_as_str())
             .field("flags", &self.flag_as_str_acronym())
-            .field("offset", &self.copy_offset())
-            .field("vaddr", &self.copy_vaddr())
-            .field("paddr", &self.copy_paddr())
-            .field("filesz", &self.copy_filesz())
-            .field("memsz", &self.copy_memsz())
-            .field("align", &self.copy_align())
+            .field("offset", &self.offset.0)
+            .field("vaddr", &self.vaddr.0)
+            .field("paddr", &self.paddr.0)
+            .field("filesz", &self.filesz.0)
+            .field("memsz", &self.memsz.0)
+            .field("align", &self.align.0)
             .finish()
     }
 }

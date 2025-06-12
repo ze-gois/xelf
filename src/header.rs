@@ -95,37 +95,37 @@ pub struct Header {
 }
 
 impl Header {
-    pub fn read_from_filepath(filepath: &str) -> Self {
+    pub fn from_filepath(filepath: &str) -> crate::Result<Self> {
         let file_descriptor = crate::open_filepath(filepath);
-        Self::read_from_file_descriptor(&file_descriptor)
+        Self::from_file_descriptor(&file_descriptor)
     }
 
-    pub fn read_from_file_descriptor(file_descriptor: isize) -> Self {
-        let identifier = Identifier::read_from_file_descriptor(&file_descriptor);
-        let endianess = identifier.get_endianess();
+    pub fn from_file_descriptor(file_descriptor: isize) -> crate::Result<Self> {
+        let identifier = Identifier::from_file_descriptor(&file_descriptor);
+        let endianness = identifier.get_endianness();
 
         // let mut offset: dtype::Off = 16;
         syscall::lseek(file_descriptor, 16, syscall::lseek::Flag::SET.into());
 
-        Self {
+        Ok(Self {
             identifier,
-            etype: dtype::Half::read(file_descriptor, &endianess),
-            machine: dtype::Half::read(file_descriptor, &endianess),
-            version: dtype::Word::read(file_descriptor, &endianess),
-            entry: dtype::Addr::read(file_descriptor, &endianess),
-            phoff: dtype::Off::read(file_descriptor, &endianess),
-            shoff: dtype::Off::read(file_descriptor, &endianess),
-            flags: dtype::Word::read(file_descriptor, &endianess),
-            ehsize: dtype::Half::read(file_descriptor, &endianess),
-            phentsize: dtype::Half::read(file_descriptor, &endianess),
-            phnum: dtype::Half::read(file_descriptor, &endianess),
-            shentsize: dtype::Half::read(file_descriptor, &endianess),
-            shnum: dtype::Half::read(file_descriptor, &endianess),
-            shstrndx: dtype::Half::read(file_descriptor, &endianess),
-        }
+            etype: dtype::Half::read(file_descriptor, endianness),
+            machine: dtype::Half::read(file_descriptor, endianness),
+            version: dtype::Word::read(file_descriptor, endianness),
+            entry: dtype::Addr::read(file_descriptor, endianness),
+            phoff: dtype::Off::read(file_descriptor, endianness),
+            shoff: dtype::Off::read(file_descriptor, endianness),
+            flags: dtype::Word::read(file_descriptor, endianness),
+            ehsize: dtype::Half::read(file_descriptor, endianness),
+            phentsize: dtype::Half::read(file_descriptor, endianness),
+            phnum: dtype::Half::read(file_descriptor, endianness),
+            shentsize: dtype::Half::read(file_descriptor, endianness),
+            shnum: dtype::Half::read(file_descriptor, endianness),
+            shstrndx: dtype::Half::read(file_descriptor, endianness),
+        })
     }
 
-    pub fn read_nth_section_header(
+    pub fn nth_section_header(
         &self,
         file_descriptor: isize,
         index: dtype::Half,
@@ -135,18 +135,21 @@ impl Header {
 
         syscall::lseek(file_descriptor, offset, syscall::lseek::Flag::SET.into());
 
-        crate::SectionHeader::read_from_file_descriptor(file_descriptor, &endianess)
+        crate::SectionHeader::from_file_descriptor(file_descriptor, &endianess)
     }
 
-    pub fn read_nth_program_header(
+    pub fn nth_program_header(
         &self,
         file_descriptor: isize,
         index: dtype::Half,
     ) -> crate::ProgramHeader {
-        let mut offset = self.phoff + (index * self.phentsize) as dtype::Off;
+        let mut offset = self.phoff + (index * self.phentsize);
+
+        syscall::lseek(file_descriptor, offset, syscall::lseek::Flag::SET.into());
+
         let endianess = self.get_identifier().get_endianess();
 
-        crate::ProgramHeader::read_from_memmap(&filemap, &mut offset, &endianess)
+        crate::ProgramHeader::from_memmap(&file_descriptor, &endianess)
     }
 
     pub fn get_etype(&self) -> Type {

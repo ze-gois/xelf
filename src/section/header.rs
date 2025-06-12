@@ -86,13 +86,13 @@ impl Header {
         }
     }
 
-    pub fn read_nth_from_filepath(filepath: &str, index: usize) -> Self {
+    pub fn nth_from_filepath(filepath: &str, index: usize) -> Self {
         let file_descriptor = crate::open_filepath(filepath);
-        let elf_header = crate::ELFHeader::read_from_file_descriptor(&file_descriptor);
-        Self::read_nth_from_elf_header(&file_descriptor, &elf_header, index)
+        let elf_header = crate::ELFHeader::from_file_descriptor(file_descriptor);
+        Self::nth_from_elf_header(file_descriptor, &elf_header, index)
     }
 
-    pub fn read_nth_from_elf_header(
+    pub fn nth_from_elf_header(
         file_descriptor: isize,
         elf_header: &crate::ELFHeader,
         index: usize,
@@ -102,25 +102,25 @@ impl Header {
         let mut offset = elf_header.shoff + (index * elf_header.shentsize.0);
         syscall::lseek(file_descriptor, offset, syscall::lseek::Flag::SET.into());
 
-        Self::read_from_file_descriptor(&file_descriptor, &endianess)
+        Self::from_file_descriptor(file_descriptor, &endianess)
     }
 
-    pub fn read_from_file_descriptor(
+    pub fn from_file_descriptor(
         file_descriptor: isize,
-        endianess: &dtype::Endianness,
-    ) -> Self {
-        Self {
-            name: dtype::Word::read(file_descriptor, &endianess)?,
-            stype: dtype::Word::read(file_descriptor, &endianess)?,
-            flags: dtype::XWord::read(file_descriptor, &endianess)?,
-            addr: dtype::Addr::read(file_descriptor, &endianess)?,
-            offset: dtype::Off::read(file_descriptor, &endianess)?,
-            size: dtype::XWord::read(file_descriptor, &endianess)?,
-            link: dtype::Word::read(file_descriptor, &endianess)?,
-            info: dtype::Word::read(file_descriptor, &endianess)?,
-            addralign: dtype::XWord::read(file_descriptor, &endianess)?,
-            entsize: dtype::XWord::read(file_descriptor, &endianess)?,
-        }
+        endianess: dtype::Endianness,
+    ) -> crate::Result<Self> {
+        Ok(Self {
+            name: dtype::Word::read(file_descriptor, endianess)?,
+            stype: dtype::Word::read(file_descriptor, endianess)?,
+            flags: dtype::XWord::read(file_descriptor, endianess)?,
+            addr: dtype::Addr::read(file_descriptor, endianess)?,
+            offset: dtype::Off::read(file_descriptor, endianess)?,
+            size: dtype::XWord::read(file_descriptor, endianess)?,
+            link: dtype::Word::read(file_descriptor, endianess)?,
+            info: dtype::Word::read(file_descriptor, endianess)?,
+            addralign: dtype::XWord::read(file_descriptor, endianess)?,
+            entsize: dtype::XWord::read(file_descriptor, endianess)?,
+        })
     }
 
     pub fn copy_name(&self) -> dtype::Word {
@@ -151,7 +151,7 @@ impl Header {
             counter = counter + 1;
         }
 
-        let pointer = arch::memory::alloc::<u8>(counter)?;
+        let pointer = crate::alloc::<u8>(counter)?;
 
         let mut counter = 0;
 
@@ -195,8 +195,8 @@ impl Header {
     }
 }
 
-impl std::fmt::Display for Header {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Display for Header {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "tSection Header:")?;
         write!(f, "\tname: {:?}", self.get_name_string())?;
         write!(f, "\tstype: {:?}", self.get_stype_str())?;
@@ -212,8 +212,8 @@ impl std::fmt::Display for Header {
     }
 }
 
-impl std::fmt::Debug for Header {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Debug for Header {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(
             f,
             "Header {{ name: {}, stype: {}, flags: {}, addr: {}, offset: {}, size: {}, link: {}, info: {}, addralign: {}, entsize: {} }}",
