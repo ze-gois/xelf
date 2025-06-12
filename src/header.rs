@@ -97,11 +97,11 @@ pub struct Header {
 impl Header {
     pub fn from_filepath(filepath: &str) -> crate::Result<Self> {
         let file_descriptor = crate::open_filepath(filepath);
-        Self::from_file_descriptor(&file_descriptor)
+        Self::from_file_descriptor(file_descriptor)
     }
 
     pub fn from_file_descriptor(file_descriptor: isize) -> crate::Result<Self> {
-        let identifier = Identifier::from_file_descriptor(&file_descriptor);
+        let identifier = Identifier::from_file_descriptor(file_descriptor)?;
         let endianness = identifier.get_endianness();
 
         // let mut offset: dtype::Off = 16;
@@ -109,19 +109,19 @@ impl Header {
 
         Ok(Self {
             identifier,
-            etype: dtype::Half::read(file_descriptor, endianness),
-            machine: dtype::Half::read(file_descriptor, endianness),
-            version: dtype::Word::read(file_descriptor, endianness),
-            entry: dtype::Addr::read(file_descriptor, endianness),
-            phoff: dtype::Off::read(file_descriptor, endianness),
-            shoff: dtype::Off::read(file_descriptor, endianness),
-            flags: dtype::Word::read(file_descriptor, endianness),
-            ehsize: dtype::Half::read(file_descriptor, endianness),
-            phentsize: dtype::Half::read(file_descriptor, endianness),
-            phnum: dtype::Half::read(file_descriptor, endianness),
-            shentsize: dtype::Half::read(file_descriptor, endianness),
-            shnum: dtype::Half::read(file_descriptor, endianness),
-            shstrndx: dtype::Half::read(file_descriptor, endianness),
+            etype: dtype::Half::read(file_descriptor, endianness)?,
+            machine: dtype::Half::read(file_descriptor, endianness)?,
+            version: dtype::Word::read(file_descriptor, endianness)?,
+            entry: dtype::Addr::read(file_descriptor, endianness)?,
+            phoff: dtype::Off::read(file_descriptor, endianness)?,
+            shoff: dtype::Off::read(file_descriptor, endianness)?,
+            flags: dtype::Word::read(file_descriptor, endianness)?,
+            ehsize: dtype::Half::read(file_descriptor, endianness)?,
+            phentsize: dtype::Half::read(file_descriptor, endianness)?,
+            phnum: dtype::Half::read(file_descriptor, endianness)?,
+            shentsize: dtype::Half::read(file_descriptor, endianness)?,
+            shnum: dtype::Half::read(file_descriptor, endianness)?,
+            shstrndx: dtype::Half::read(file_descriptor, endianness)?,
         })
     }
 

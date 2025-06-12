@@ -33,13 +33,13 @@ impl Header {
     ///
     /// ```rust
     /// let path : &str = "./data/symver.powerpc64.so";
-    /// let program_header = lib::header::Program::read_from_memmap(&map);
+    /// let program_header = lib::header::Program::from_memmap(&map);
     /// println!("{}",program_header);
     /// ```
-    pub fn read_nth_from_filepath(filepath: &str, index: dtype::Half) -> Self {
+    pub fn nth_from_filepath(filepath: &str, index: dtype::Half) -> Self {
         let file_descriptor = crate::open_filepath(filepath);
-        let elf_header = crate::ELFHeader::read_from_file_descriptor(file_descriptor);
-        Self::read_nth_from_elf_header(file_descriptor, &elf_header, index)
+        let elf_header = crate::ELFHeader::from_file_descriptor(file_descriptor);
+        Self::nth_from_elf_header(file_descriptor, &elf_header, index)
     }
 
     /// Loads ELF Identifier from a filemap
@@ -48,13 +48,13 @@ impl Header {
     /// let path : &str = "./data/symver.powerpc64.so";
     /// let file = core::fs::File::open(filepath).unwrap();
     /// let filemap = unsafe { memmap2::Mmap::map(&file).unwrap() };
-    /// let elf_header = lib::header::ELF::read_from_memmap(&filemap);
+    /// let elf_header = lib::header::ELF::from_memmap(&filemap);
     /// let index = elf_header.shstrndx;
     /// let program_header =
-    ///     lib::header::Program::read_nth_from_elf_header(&filemap, &elf_header, index);
+    ///     lib::header::Program::nth_from_elf_header(&filemap, &elf_header, index);
     /// println!("{}",program_header);
     /// ```
-    pub fn read_nth_from_elf_header(
+    pub fn nth_from_elf_header(
         file_descriptor: isize,
         elf_header: &crate::ELFHeader,
         index: dtype::Half,
@@ -65,7 +65,7 @@ impl Header {
 
         let endianness = elf_header.get_identifier().get_endianness();
 
-        Self::read_from_file_descriptor(file_descriptor, endianness)
+        Self::from_file_descriptor(file_descriptor, endianness)
     }
 
     /// Loads ELF Identifier from a filemap
@@ -74,12 +74,12 @@ impl Header {
     /// let path : &str = "./data/symver.powerpc64.so";
     /// let file = core::fs::File::open(filepath).unwrap();
     /// let filemap = unsafe { memmap2::Mmap::map(&file).unwrap() };
-    /// let elf_header = lib::header::ELF::read_from_memmap(&filemap);
+    /// let elf_header = lib::header::ELF::from_memmap(&filemap);
     /// let program_header =
-    ///     lib::header::Program::read_nth_from_elf_header(&filemap, &elf_header, index);
+    ///     lib::header::Program::nth_from_elf_header(&filemap, &elf_header, index);
     /// println!("{}",program_header);
     /// ```
-    pub fn read_from_file_descriptor(
+    pub fn from_file_descriptor(
         file_descriptor: isize,
         endianness: dtype::Endianness,
     ) -> crate::Result<Self> {

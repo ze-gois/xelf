@@ -29,7 +29,7 @@ define_syscall_error!(
 );
 
 pub fn openat(
-    directory_file_descriptor: i32,
+    directory_file_descriptor: isize,
     file_pathname: *const u8,
     flags: i32,
 ) -> crate::result::Result<isize> {
@@ -44,7 +44,7 @@ pub fn openat(
 }
 
 pub fn openat4(
-    directory_file_descriptor: i32,
+    directory_file_descriptor: isize,
     file_pathname: *const u8,
     flags: i32,
     mode: i32,

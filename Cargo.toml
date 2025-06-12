@@ -12,7 +12,7 @@ result = { path = "crates/result" }
 [workspace]
 members = [
     "crates/arch",
-    "crates/human",
+    "crates/human", "crates/macros",
     "crates/result",
     "crates/syscall",
     "crates/x86_64",

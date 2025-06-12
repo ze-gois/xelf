@@ -15,7 +15,7 @@ impl Entry {
         endianness: Endianness,
     ) -> crate::Result<Self> {
         Ok(Entry {
-            header: Header::read_from_file_descriptor(file_descriptor, endianness)?,
+            header: Header::from_file_descriptor(file_descriptor, endianness)?,
             content: core::ptr::null_mut(),
         })
     }

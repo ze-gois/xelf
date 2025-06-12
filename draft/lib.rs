@@ -22,8 +22,8 @@ pub use program::Header as ProgramHeader;
 pub use program::Table as ProgramTable;
 
 use core::sync::atomic;
-use x86_64::syscall;
 use x86_64::ToFlags;
+use x86_64::syscall;
 
 pub static mut IS_DYNAMIC: core::mem::MaybeUninit<bool> = core::mem::MaybeUninit::uninit();
 
@@ -83,7 +83,7 @@ impl ELF<'_> {
         loop {}
     }
 
-    pub unsafe fn read(file_descriptor: i32) -> Result<Self> {
+    pub unsafe fn read(file_descriptor: isize) -> Result<Self> {
         x86_64::print_str("\nReading Header\n");
         let header = ELFHeader::read(file_descriptor)?;
         x86_64::print_str("\nDone Reading Header\n");

@@ -120,7 +120,6 @@ impl Identifier {
     /// println!("{}",identifier);
     /// ```
     pub fn from_file_descriptor(file_descriptor: isize) -> crate::Result<Self> {
-        let mut offset = 0;
         let endianness = Endianness::LSB;
 
         syscall::lseek(file_descriptor as i32, 0, syscall::lseek::Flag::SET.to());

@@ -1,7 +1,7 @@
 use crate::info;
 use core::ptr;
 
-pub fn alloc<T: Sized>(counter: usize) -> Option<*mut T> {
+pub fn alloc<T: Sized>(counter: usize) -> crate::Result<*mut T> {
     let pointer = {
         let size = core::mem::size_of::<T>() * counter;
 
@@ -20,10 +20,10 @@ pub fn alloc<T: Sized>(counter: usize) -> Option<*mut T> {
             Ok(ptr) => ptr as *mut T,
             Err(_) => {
                 info!("Failed to allocate arch::memory\n");
-                return None;
+                return Err(crate::Error::TODO);
             }
         }
     };
 
-    Some(pointer)
+    Ok(pointer)
 }

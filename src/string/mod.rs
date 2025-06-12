@@ -10,10 +10,22 @@ pub struct Table<'a> {
     pub offset: dtype::Off,
     pub entries: *mut Entry<'a>,
     pub counter: usize,
+    pub cursor: usize,
+}
+
+impl<'a> core::iter::Iterator for Table<'a> {
+    type Item = Entry<'a>;
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.cursor >= self.counter {
+            return None;
+        }
+        let entry = unsafe { (*self.entries.add(self.cursor)).clone() };
+        Some(entry)
+    }
 }
 
 impl<'a> Table<'a> {
-    pub fn read_from_section_header(
+    pub fn from_section_header(
         file_descriptor: isize,
         string_table_entry: &crate::SectionEntry,
         endianness: dtype::Endianness,
@@ -68,39 +80,36 @@ pub struct Tables<'t> {
 }
 
 impl<'t> Tables<'t> {
-    pub fn read_from_filepath(filepath: &str) -> Option<Self> {
+    pub fn from_filepath(filepath: &str) -> Option<Self> {
         let file_descriptor = crate::open_filepath(filepath);
-        Self::read_from_file_descriptor(file_descriptor)
+        Self::from_file_descriptor(file_descriptor)
     }
 
-    pub fn read_from_file_descriptor(file_descriptor: isize) -> Option<Self> {
-        let elf_header = crate::ELFHeader::read_from_file_descriptor(file_descriptor);
-        Self::read_from_elf_header(file_descriptor, &elf_header)
+    pub fn from_file_descriptor(file_descriptor: isize) -> Option<Self> {
+        let elf_header = crate::ELFHeader::from_file_descriptor(file_descriptor);
+        Self::from_elf_header(file_descriptor, &elf_header)
     }
 
-    pub fn read_from_elf_header(
-        file_descriptor: isize,
-        elf_header: &crate::ELFHeader,
-    ) -> Option<Self> {
+    pub fn from_elf_header(file_descriptor: isize, elf_header: &crate::ELFHeader) -> Option<Self> {
         // let mut offset = elf_header.get_shoff();
         let endianess = elf_header.get_identifier().get_endianness();
         // let number_of_entries = elf_header.get_shnum();
 
-        let section_table = crate::SectionTable::read_from_file_descriptor(&filemap);
+        let section_table = crate::SectionTable::from_file_descriptor(&filemap);
 
-        Self::read_from_section_table(file_descriptor, &endianess, section_table)
+        Self::from_section_table(file_descriptor, &endianess, section_table)
     }
 
-    pub fn read_from_section_table(
-        file_descriptor: isize,
-        endianess: &dtype::Endianness,
-        section_table: crate::SectionTable,
+    pub fn from_section_table(
+        _file_descriptor: isize,
+        _endianess: &dtype::Endianness,
+        _section_table: crate::SectionTable,
     ) -> Option<Self> {
-        let mut strtab_counter = 0;
+        // let mut strtab_counter = 0;
 
         // #TODO
 
-        let string_tables = crate::alloc::<crate::SectionEntry>(10);
+        // let string_tables = crate::alloc::<crate::SectionEntry>(10);
 
         // = section_table
         // .entries
@@ -110,7 +119,7 @@ impl<'t> Tables<'t> {
 
         // string_tables
         //     .into_iter()
-        //     .map(|entry| Self::read_from_section_header(filemap, &entry, &endianess))
+        //     .map(|entry| Self::from_section_header(filemap, &entry, &endianess))
         //     .collect()
         None
     }

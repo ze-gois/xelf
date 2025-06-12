@@ -15,6 +15,7 @@ pub use index::Index;
 
 pub mod entry;
 pub use entry::Entry;
+use syscall::lseek;
 
 use crate::ELFHeader;
 
@@ -46,46 +47,38 @@ impl core::iter::Iterator for Table {
 }
 
 impl Table {
-    pub fn read_from_filepath(filepath: &str) -> Self {
+    pub fn from_filepath(filepath: &str) -> crate::Result<Self> {
         let file_descriptor = crate::open_filepath(filepath);
-        Self::read_from_file_descriptor(file_descriptor)
+        Self::from_file_descriptor(file_descriptor)
     }
 
-    pub fn read_from_file_descriptor(file_descriptor: isize) -> Self {
-        let elf_header = ELFHeader::read_from_file_descriptor(file_descriptor);
-        Self::read_from_elf_header(file_descriptor, &elf_header)
+    pub fn from_file_descriptor(file_descriptor: isize) -> crate::Result<Self> {
+        let elf_header = ELFHeader::from_file_descriptor(file_descriptor)?;
+        Self::from_elf_header(file_descriptor, &elf_header)
     }
 
-    pub fn read_from_elf_header(
-        file_descriptor: isize,
-        elf_header: &ELFHeader,
-    ) -> crate::Result<Self> {
-        let mut offset = elf_header.shoff;
+    pub fn from_elf_header(file_descriptor: isize, elf_header: &ELFHeader) -> crate::Result<Self> {
+        let offset = elf_header.shoff;
         let endianness = elf_header.get_identifier().get_endianness();
-        let number_of_entries = elf_header.shnum;
+        let counter = elf_header.shnum.0 as usize;
 
-        let entries_pointer = crate::alloc::<Entry>(number_of_entries.0 as usize)?;
+        let entries_pointer = crate::alloc::<Entry>(counter)?;
 
-        for e in 0..number_of_entries.0 as usize {
+        // syscall::lseek(file_descriptor as i32, offset, syscall::lseek::Flag::SET.0)?;
+        crate::set_lseek(file_descriptor, offset.0 as i64)?;
+
+        for e in 0..counter {
             unsafe {
-                *entries_pointer.add(e) =
-                    Entry::read_from_file_descriptor(file_descriptor, endianness)?
+                *entries_pointer.add(e) = Entry::from_file_descriptor(file_descriptor, endianness)?
             }
         }
 
-        Self {
+        Ok(Self {
+            counter,
+            cursor: 0,
             offset,
-            entries: (0..number_of_entries)
-                .map(|_| Entry {
-                    header: crate::SectionHeader::read_from_file_descriptor(
-                        filemap,
-                        &mut offset,
-                        &endianess,
-                    ),
-                    content: core::ptr::null_mut(),
-                })
-                .collect::<Vec<crate::SectionEntry>>(),
-        }
+            entries: entries_pointer,
+        })
     }
 }
 

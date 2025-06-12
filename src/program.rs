@@ -28,17 +28,17 @@ impl core::iter::Iterator for Table {
 }
 
 impl Table {
-    pub fn read_from_filepath(filepath: &str) -> crate::Result<Self> {
+    pub fn from_filepath(filepath: &str) -> crate::Result<Self> {
         let file_descriptor = crate::open_filepath(filepath);
-        Self::read_from_file_descriptor(file_descriptor)
+        Self::from_file_descriptor(file_descriptor)
     }
 
-    pub fn read_from_file_descriptor(file_descriptor: isize) -> crate::Result<Self> {
-        let elf_header = crate::ELFHeader::read_from_file_descriptor(file_descriptor);
-        Self::read_from_elf_header(file_descriptor, &elf_header)
+    pub fn from_file_descriptor(file_descriptor: isize) -> crate::Result<Self> {
+        let elf_header = crate::ELFHeader::from_file_descriptor(file_descriptor);
+        Self::from_elf_header(file_descriptor, &elf_header)
     }
 
-    pub fn read_from_elf_header(
+    pub fn from_elf_header(
         file_descriptor: isize,
         elf_header: &crate::ELFHeader,
     ) -> crate::Result<Self> {
@@ -55,7 +55,7 @@ impl Table {
         let entries_pointer = crate::alloc::<Entry>(number_of_entries.0 as usize).unwrap();
 
         for e in 0..number_of_entries.0 {
-            let header = Header::read_from_file_descriptor(file_descriptor, endianess)?;
+            let header = Header::from_file_descriptor(file_descriptor, endianess)?;
             unsafe {
                 *entries_pointer.add(e as usize) = Entry { header };
             }

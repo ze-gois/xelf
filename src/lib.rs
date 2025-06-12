@@ -148,7 +148,7 @@ pub enum FileType {
 ///    and string and symbol tables.
 ///
 #[repr(C)]
-pub struct ELF {
+pub struct ELF<'a> {
     /// Executable and linkable format header
     ///
     /// An ELF header resides at the beginning and holds a "road map'' describing the file's
@@ -159,7 +159,7 @@ pub struct ELF {
     pub header: ELFHeader,
 
     /// String table
-    pub string_table: Option<StringTable>,
+    pub string_table: Option<StringTable<'a>>,
 
     /// Section header table
     ///
@@ -176,58 +176,77 @@ pub struct ELF {
     /// files do not need one
     pub program_header_table: Option<ProgramTable>,
 
-    /// Filemap to the file path informed on instantiation
+    /// File descriptor (fd) to the file path informed on instantiation
     pub file_descriptor: isize,
 }
 
-pub fn open_filepath(filepath: &str) -> isize {
-    match filepath[0] {
+pub fn open_filepath(filepath: &str) -> crate::Result<isize> {
+    match filepath.chars().nth(0) {
         _ => {
-            let dfd = syscall::open::AtFlag::FDCWD;
-            let flag = syscall::open::Flag::RDONLY.into;
-            match syscall::openat(dfd, filepath, flag) {
-                Ok(fd) => fd,
-                Err(e) => panic!("omazi"),
+            let dfd = syscall::open::AtFlag::FDCWD as isize;
+            let flag = syscall::open::Flag::RDONLY as i32;
+            match syscall::openat(dfd, filepath.as_ptr(), flag) {
+                Ok(fd) => Ok(fd),
+                Err(_e) => Err(crate::Error::TODO),
             }
         }
     }
 }
 
+pub fn set_lseek(file_descriptor: isize, offset: i64) -> crate::Result<()> {
+    match syscall::lseek(
+        file_descriptor as i32,
+        offset,
+        syscall::lseek::Flag::SET as i32,
+    ) {
+        Ok(_) => Ok(()),
+        Err(_e) => Err(crate::Error::TODO),
+    }
+}
+
 /// Oi 1
-impl ELF {
+impl<'a> ELF<'a> {
     ///*
-    pub fn read_from_filepath(filepath: &str) -> Self {
+    pub fn from_filepath(filepath: &str) -> Result<Self> {
         let file_descriptor = open_filepath(filepath);
-        Self::read_from_file_descriptor(file_descriptor)
+        Self::from_file_descriptor(file_descriptor)
     }
 
-    pub fn read_from_file_descriptor(file_descriptor: isize) -> Self {
-        let elf_header = ELFHeader::read_from_file_descriptor(file_descriptor);
+    pub fn from_file_descriptor(file_descriptor: isize) -> Result<Self> {
+        let elf_header = ELFHeader::from_file_descriptor(file_descriptor)?;
 
-        let endianess = elf_header.get_identifier().get_endianess();
+        let endianness = elf_header.get_identifier().get_endianness();
         //let string_table: Option<StringTable> = None;
 
-        let program_header_table = match elf_header.phoff {
+        let program_header_table = match elf_header.phoff.0 {
             0 => None,
-            _ => Some(ProgramTable::read_from_elf_header(&filemap, &elf_header)),
+            _ => Some(ProgramTable::from_elf_header(file_descriptor, &elf_header)?),
         };
 
-        let section_header_table = match elf_header.shoff {
+        let section_header_table = match elf_header.shoff.0 {
             0 => None,
-            _ => Some(SectionTable::read_from_elf_header(&filemap, &elf_header)),
+            _ => Some(SectionTable::from_elf_header(file_descriptor, &elf_header)),
         };
 
-        let section_header_string_table_index = elf_header.shstrndx;
-        let string_table = match section_header_string_table_index {
+        let strtab = match section_header_table.unwrap().into_iter().skip((elf_header.shstrndx.0 as usize).checked_sub(1).unwrap()).next() {
+           None => None,
+           Some(section_entry) => {
+               let section_header = SectionHeader::from_entry()
+               Some(StringTable::from_section_header(file_descriptor, section_header, endianness))
+           }
+        }
+
+        let section_header_string_table_index = ;
+        let string_table = match section_header_string_table_index.0 {
             0 => None,
             _ => {
                 if let Some(section_header_table) = &section_header_table {
                     let section_header_string_table =
-                        &section_header_table.entries[section_header_string_table_index as usize];
-                    Some(StringTable::read_from_section_header(
-                        &filemap,
+                        &section_header_table.entries[section_header_string_table_index.0 as usize];
+                    Some(StringTable::from_section_header(
+                        file_descriptor,
                         section_header_string_table,
-                        &endianess,
+                        endianness,
                     ))
                 } else {
                     None
@@ -235,17 +254,17 @@ impl ELF {
             }
         };
 
-        Self {
-            filemap,
+        Ok(Self {
             header: elf_header,
             string_table,
             program_header_table,
             section_header_table,
-        }
+            file_descriptor,
+        })
     }
 
     pub fn load_programs(&mut self) -> bool {
-        let mut program_segments: Vec<program::Entry> = self
+        let mut program_segments = self
             .program_header_table
             .clone()
             .unwrap()
@@ -274,113 +293,113 @@ impl ELF {
         let program_virtual_address_length =
             program_highest_virtual_address - program_lowest_virtual_address;
 
-        let program_lowest_virtual_address_pointer = unsafe {
-            libc::mmap(
-                program_lowest_virtual_address as *mut core::ffi::c_void,
-                program_virtual_address_length as usize,
-                libc::PROT_READ | libc::PROT_WRITE,
-                libc::MAP_FIXED | libc::MAP_PRIVATE | libc::MAP_ANONYMOUS,
-                -1,
-                0,
-            )
-        };
+        let program_lowest_virtual_address_pointer = syscall::mmap(
+            program_lowest_virtual_address as *mut core::ffi::c_void,
+            program_virtual_address_length as usize,
+            syscall::mmap::Prot::Read | syscall::mmap::Prot::Write,
+            syscall::mmap::Flag::Fixed.into()
+                | syscall::mmap::Flag::Private.into()
+                | syscall::mmap::Flag::Anonymous.into(),
+            -1,
+            0,
+        );
 
         let mut do_unmap = false;
         for program_segment in program_segments {
-            let segment_header = program_segment.header;
-            let segment_lower_virtual_address =
-                segment_header.vaddr + dynamic_virtual_address_offset;
+            // let segment_header = program_segment.header;
+            // let segment_lower_virtual_address =
+            //     segment_header.vaddr + dynamic_virtual_address_offset;
 
-            info!("{}", segment_header);
-            info!("Mapping segment at 0x{:x}", segment_lower_virtual_address);
+            // info!("{}", segment_header);
+            // info!("Mapping segment at 0x{:x}", segment_lower_virtual_address);
 
-            let mmap_lowest_virtual_address =
-                arch::memory::round_address_to_lower_page_boundary(segment_lower_virtual_address);
+            // let mmap_lowest_virtual_address =
+            //     arch::memory::round_address_to_lower_page_boundary(segment_lower_virtual_address);
 
-            let mmap_virtual_address_offset =
-                segment_lower_virtual_address - mmap_lowest_virtual_address;
-            let mmap_virtual_address_length = segment_header.memsz + mmap_virtual_address_offset;
+            // let mmap_virtual_address_offset =
+            //     segment_lower_virtual_address - mmap_lowest_virtual_address;
+            // let mmap_virtual_address_length = segment_header.memsz + mmap_virtual_address_offset;
 
-            let mmap_segment_pointer = unsafe {
-                let mmap_lowest_virtual_address_pointer =
-                    mmap_lowest_virtual_address as *mut core::ffi::c_void;
+            // let mmap_segment_pointer = unsafe {
+            //     let mmap_lowest_virtual_address_pointer =
+            //         mmap_lowest_virtual_address as *mut core::ffi::c_void;
 
-                let pointer = libc::mmap(
-                    mmap_lowest_virtual_address_pointer,
-                    mmap_virtual_address_length as usize,
-                    libc::PROT_READ | libc::PROT_WRITE,
-                    libc::MAP_FIXED | libc::MAP_PRIVATE | libc::MAP_ANONYMOUS,
-                    -1,
-                    0,
-                );
+            //     let pointer = libc::mmap(
+            //         mmap_lowest_virtual_address_pointer,
+            //         mmap_virtual_address_length as usize,
+            //         libc::PROT_READ | libc::PROT_WRITE,
+            //         libc::MAP_FIXED | libc::MAP_PRIVATE | libc::MAP_ANONYMOUS,
+            //         -1,
+            //         0,
+            //     );
 
-                if pointer == syscall::MAP_FAILED {
-                    panic!(
-                        "mmap failed: {} (address: {:p}, size: 0x{:x})",
-                        std::io::Error::last_os_error(),
-                        mmap_lowest_virtual_address_pointer,
-                        mmap_virtual_address_length
-                    );
-                }
+            //     if pointer == syscall::MAP_FAILED {
+            //         panic!(
+            //             "mmap failed: {} (address: {:p}, size: 0x{:x})",
+            //             std::io::Error::last_os_error(),
+            //             mmap_lowest_virtual_address_pointer,
+            //             mmap_virtual_address_length
+            //         );
+            //     }
 
-                info!(
-                    "Mapped segment at requested: {:p}, actual: {:p}",
-                    mmap_lowest_virtual_address_pointer, pointer
-                );
+            //     info!(
+            //         "Mapped segment at requested: {:p}, actual: {:p}",
+            //         mmap_lowest_virtual_address_pointer, pointer
+            //     );
 
-                pointer
-            };
+            //     pointer
+            // };
 
-            do_unmap &= mmap_segment_pointer == core::ptr::null_mut();
+            // do_unmap &= mmap_segment_pointer == core::ptr::null_mut();
 
-            if do_unmap {
-                break;
-            };
+            // if do_unmap {
+            //     break;
+            // };
 
-            let segment_lower_virtual_address =
-                mmap_lowest_virtual_address + mmap_virtual_address_offset;
+            // let segment_lower_virtual_address =
+            //     mmap_lowest_virtual_address + mmap_virtual_address_offset;
 
-            let segment_slice = unsafe {
-                core::slice::from_raw_parts_mut(
-                    segment_lower_virtual_address as *mut u8,
-                    segment_header.filesz as usize,
-                )
-            };
+            // let segment_slice = unsafe {
+            //     core::slice::from_raw_parts_mut(
+            //         segment_lower_virtual_address as *mut u8,
+            //         segment_header.filesz as usize,
+            //     )
+            // };
 
-            let segment_lowest_file_address = segment_header.offset as usize;
-            let segment_highest_file_address =
-                (segment_header.offset + segment_header.filesz) as usize;
-            let segment_file_address_slice =
-                segment_lowest_file_address..segment_highest_file_address;
+            // let segment_lowest_file_address = segment_header.offset as usize;
+            // let segment_highest_file_address =
+            //     (segment_header.offset + segment_header.filesz) as usize;
+            // let segment_file_address_slice =
+            //     segment_lowest_file_address..segment_highest_file_address;
 
-            segment_slice.copy_from_slice(&self.filemap[segment_file_address_slice]);
+            // segment_slice.copy_from_slice(&self.filemap[segment_file_address_slice]);
 
-            let segment_protection_flags = segment_header.get_flags().to_posix() as i32;
-            // let segment_protection_flags = libc::PROT_EXEC | PROT_READ | PROT_WRITE;
+            // let segment_protection_flags = segment_header.get_flags().to_posix() as i32;
+            // // let segment_protection_flags = libc::PROT_EXEC | PROT_READ | PROT_WRITE;
 
-            info!(
-                "Setting protection flags for segment at {:p}({:?}): 0x{:x}",
-                mmap_segment_pointer,
-                program::header::Flag::from_posix(segment_protection_flags as u32),
-                segment_protection_flags
-            );
+            // info!(
+            //     "Setting protection flags for segment at {:p}({:?}): 0x{:x}",
+            //     mmap_segment_pointer,
+            //     program::header::Flag::from_posix(segment_protection_flags as u32),
+            //     segment_protection_flags
+            // );
 
-            unsafe {
-                if syscall::mprotect(
-                    mmap_segment_pointer,
-                    mmap_virtual_address_length as usize,
-                    segment_protection_flags,
-                ) != 0
-                {
-                    panic!("mprotect panic.");
-                } else {
-                    info!("mprotect ok.");
-                }
-            };
+            // unsafe {
+            //     if syscall::mprotect(
+            //         mmap_segment_pointer,
+            //         mmap_virtual_address_length as usize,
+            //         segment_protection_flags,
+            //     ) != 0
+            //     {
+            //         panic!("mprotect panic.");
+            //     } else {
+            //         info!("mprotect ok.");
+            //     }
+            // };
 
-            if do_unmap {
-                break;
-            }
+            // if do_unmap {
+            //     break;
+            // }
         }
 
         if do_unmap {
@@ -411,7 +430,7 @@ impl ELF {
     }
 
     pub fn execute(filepath: &str) -> ! {
-        let elf_file = Self::read_from_filepath(filepath);
+        let elf_file = Self::from_filepath(filepath);
         let program_lowest_virtual_address = elf_file.load_programs();
 
         let elf_program_entry_address = if elf_file.is_dynamic() {
@@ -488,13 +507,13 @@ impl ELF {
     }
 }
 
-impl core::fmt::Display for ELF {
+impl<'a> core::fmt::Display for ELF<'a> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "{}", &self.header)?;
 
         if let Some(st) = &self.string_table {
             write!(f, "\n\t\tString table{{\n")?;
-            for (e, entry) in st.entries.iter().enumerate() {
+            for (e, entry) in st.into_iter().enumerate() {
                 write!(f, "\t\t\t{}: {}\n", e, entry.content)?;
             }
             write!(f, "\t\t}}\n")?;
@@ -503,14 +522,14 @@ impl core::fmt::Display for ELF {
         }
 
         if let Some(shtable) = &self.section_header_table {
-            for (e, entry) in shtable.entries.iter().enumerate() {
+            for (e, entry) in shtable.into_iter().enumerate() {
                 match &self.string_table {
                     Some(strtab) => {
-                        let endianess = self.header.get_identifier().get_endianess();
+                        let endianness = self.header.get_identifier().get_endianness();
                         let shname =
                             entry
                                 .header
-                                .get_name_from_filemap(&self.filemap, strtab, &endianess);
+                                .get_name_from_filemap(&self.filemap, strtab, &endianness);
                         write!(f, "\n\t\t{}: {}", e, shname)?;
                     }
                     None => {}
